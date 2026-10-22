@@ -349,6 +349,137 @@ export const CdInsertsSvgRenderer: React.FC<CdInsertsSvgRendererProps> = ({
               </text>
               {renderCoverArt(8, 40, frontW - 16, 72, `${idPrefix}-cd-dg-art`)}
             </g>
+          ) : project.templateId === 'awesome-mix-quill' ? (
+            // Peter Quill's "Awesome Mix Vol. 1 & 2" CD Front Booklet (120 x 120 mm)
+            <g>
+              <rect x={0} y={0} width={frontW} height={frontH} fill="#F4EAD2" />
+              <rect
+                x={3}
+                y={3}
+                width={frontW - 6}
+                height={frontH - 6}
+                rx="3"
+                fill="#FAF4E4"
+                stroke="#18181B"
+                strokeWidth="0.6"
+              />
+              {/* Top Lined Header Cartouche */}
+              {[10, 16, 22, 28].map((ly) => (
+                <line
+                  key={`cd-am-line-${ly}`}
+                  x1={7}
+                  y1={ly}
+                  x2={frontW - 7}
+                  y2={ly}
+                  stroke="#B8AA91"
+                  strokeWidth="0.22"
+                />
+              ))}
+              <text
+                x={frontW / 2}
+                y={19.5}
+                textAnchor="middle"
+                fill="#111111"
+                fontFamily="'Caveat', cursive, sans-serif"
+                fontWeight="700"
+                fontSize="10.2"
+                letterSpacing="0.25"
+                transform={`rotate(-1.2, ${frontW / 2}, 19.5)`}
+              >
+                {truncate(project.albumTitle.toUpperCase(), 24)}
+              </text>
+              <text
+                x={frontW / 2}
+                y={26.5}
+                textAnchor="middle"
+                fill="#78350F"
+                fontFamily="'Caveat', cursive, sans-serif"
+                fontWeight="700"
+                fontSize="4.6"
+              >
+                {truncate(project.albumArtist, 32)}
+              </text>
+
+              {/* 1970s Sunset Stripes Band */}
+              <rect x={3.3} y={32} width={frontW - 6.6} height={4.2} fill="#F59E0B" />
+              <rect x={3.3} y={36.2} width={frontW - 6.6} height={4.2} fill="#EA580C" />
+              <rect x={3.3} y={40.4} width={frontW - 6.6} height={4.8} fill="#B91C1C" />
+              <rect x={3.3} y={45.2} width={frontW - 6.6} height={8.5} fill="#18181B" />
+              <text
+                x={10}
+                y={50.9}
+                fill="#FDE68A"
+                fontFamily="Inter, Helvetica, Arial, sans-serif"
+                fontWeight="900"
+                fontSize="3.4"
+                letterSpacing="0.35"
+              >
+                MEREDITH QUILL • COMPACT DISC MIX
+              </text>
+              <text
+                x={frontW - 10}
+                y={50.9}
+                textAnchor="end"
+                fill="#FAF4E4"
+                fontFamily="JetBrains Mono, monospace"
+                fontWeight="800"
+                fontSize="2.8"
+              >
+                {formatDuration(totalSec)}
+              </text>
+
+              {/* Handwritten Tracklist Index */}
+              {Array.from({ length: 10 }).map((_, idx) => {
+                const rowY = 60.5 + idx * 5.2;
+                const trk = project.tracks[idx];
+                return (
+                  <g key={`cd-am-trk-${idx}`}>
+                    <line
+                      x1={8}
+                      y1={rowY}
+                      x2={frontW - 8}
+                      y2={rowY}
+                      stroke="#C7BAA1"
+                      strokeWidth="0.22"
+                    />
+                    {trk && (
+                      <>
+                        <text
+                          x={9.5}
+                          y={rowY - 1}
+                          fill="#B91C1C"
+                          fontFamily="JetBrains Mono, monospace"
+                          fontWeight="800"
+                          fontSize="2.4"
+                        >
+                          {String(idx + 1).padStart(2, '0')}.
+                        </text>
+                        <text
+                          x={16}
+                          y={rowY - 0.8}
+                          fill="#18181B"
+                          fontFamily="'Caveat', cursive, sans-serif"
+                          fontWeight="700"
+                          fontSize="4.3"
+                        >
+                          {truncate(`${trk.title} — ${trk.artist}`, 44)}
+                        </text>
+                        <text
+                          x={frontW - 9.5}
+                          y={rowY - 1}
+                          textAnchor="end"
+                          fill="#57534E"
+                          fontFamily="JetBrains Mono, monospace"
+                          fontSize="2.3"
+                        >
+                          {formatDuration(trk.durationSec)}
+                        </text>
+                      </>
+                    )}
+                  </g>
+                );
+              })}
+            </g>
           ) : (
             // Standard Editorial Framed CD Booklet (CBS, EMI, Warner, ECM, Factory, Blue Note, etc.)
             <g>

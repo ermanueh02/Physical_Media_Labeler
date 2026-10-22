@@ -1,6 +1,7 @@
 export type MediaFormat = 'cassette' | 'cd';
 
 export type TemplateId =
+  | 'awesome-mix-quill'
   | 'full-bleed-art'
   | 'tdk-d-index'
   | 'cbs-epic'
@@ -220,6 +221,21 @@ export interface TemplateMetadata {
 }
 
 export const HISTORICAL_TEMPLATES: TemplateMetadata[] = [
+  {
+    id: 'awesome-mix-quill',
+    name: 'Awesome Mix Vol. 1 & 2',
+    era: '1974–1978',
+    region: 'Peter Quill / Star-Lord',
+    description:
+      'Inspirada en los cassettes de Peter Quill (Guardians of the Galaxy): franjas retro años 70 en naranja quemado, rojo carmesí y ámbar dorado, papel crema envejecido y rotulador manuscrito.',
+    defaultAccent: '#E85D04',
+    defaultSecondary: '#D00000',
+    defaultPaper: 'aged-ivory',
+    defaultTypography: 'handwritten-pen',
+    defaultLabel: 'SUPERTAPE / LN-60',
+    defaultCatalog: 'VOL. 1 & 2',
+    defaultStereoText: 'LOW NOISE • HIGH OUTPUT 60',
+  },
   {
     id: 'full-bleed-art',
     name: 'Portada a Sangre (Sin Marco)',

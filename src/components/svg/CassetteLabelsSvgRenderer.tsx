@@ -69,6 +69,7 @@ export const SingleCassetteLabelSvg: React.FC<SingleCassetteLabelProps> = ({
   const clipId = `label-clip-${side}-${Math.round(x)}-${Math.round(y)}`;
   const isDG = project.templateId === 'deutsche-grammophon';
   const isTDK = project.templateId === 'tdk-d-index';
+  const isAwesomeMix = project.templateId === 'awesome-mix-quill';
   const isHandwritten = project.typography === 'handwritten-pen';
 
   return (
@@ -82,7 +83,53 @@ export const SingleCassetteLabelSvg: React.FC<SingleCassetteLabelProps> = ({
       <g clipPath={`url(#${clipId})`}>
         <rect x={0} y={0} width={W} height={H} fill={paper.bgHex} />
 
-        {isTDK ? (
+        {isAwesomeMix ? (
+          <>
+            {/* Franjas horizontales años 70 (Ámbar, Naranja Quemado, Rojo Carmesí y Negro) en la banda central */}
+            <rect x={0} y={12.0} width={W} height={4.4} fill="#FAA307" />
+            <rect x={0} y={16.4} width={W} height={5.2} fill={project.accentColor} />
+            <rect x={0} y={21.6} width={W} height={5.6} fill={project.secondaryColor} />
+            <rect x={0} y={27.2} width={W} height={4.2} fill="#18181B" />
+
+            {/* Cartela pautada superior estilo Awesome Mix Vol. 1 & 2 */}
+            <rect
+              x={4.5}
+              y={1.6}
+              width={W - 9}
+              height={9.4}
+              rx={1}
+              fill="#FAF5E8"
+              stroke="#18181B"
+              strokeWidth="0.35"
+            />
+            <line x1={7} y1={6.4} x2={W - 7} y2={6.4} stroke="#A8A29E" strokeWidth="0.2" />
+            <line x1={7} y1={9.8} x2={W - 7} y2={9.8} stroke="#A8A29E" strokeWidth="0.2" />
+
+            <text
+              x={W / 2}
+              y={isHandwritten ? 6.2 : 5.8}
+              textAnchor="middle"
+              fill="#18181B"
+              fontFamily={fontFamily}
+              fontWeight="800"
+              fontSize={isHandwritten ? '5.2' : '3.4'}
+              letterSpacing="0.14"
+            >
+              {truncate(project.albumTitle, 32)}
+            </text>
+            <text
+              x={W / 2}
+              y={9.4}
+              textAnchor="middle"
+              fill="#44403C"
+              fontFamily={fontFamily}
+              fontWeight="700"
+              fontSize={isHandwritten ? '2.8' : '1.9'}
+            >
+              {truncate(project.albumArtist, 38)}
+            </text>
+          </>
+        ) : isTDK ? (
           <>
             {/* Franja superior TDK D con pestaña trapezoidal negra e ícono ❖ TDK */}
             <polygon points={`0,0 24,0 20.5,11.5 0,11.5`} fill={project.accentColor} />
@@ -180,7 +227,53 @@ export const SingleCassetteLabelSvg: React.FC<SingleCassetteLabelProps> = ({
         )}
 
         {/* Large Minimalist Side Indicator ("A" / "B") on Left Wing */}
-        {isTDK ? (
+        {isAwesomeMix ? (
+          <g>
+            <rect
+              x={2.8}
+              y={14.8}
+              width={9.4}
+              height={13.5}
+              rx={1}
+              fill="#FAF5E8"
+              stroke="#18181B"
+              strokeWidth="0.4"
+            />
+            <text
+              x={7.5}
+              y={17.5}
+              textAnchor="middle"
+              fill="#18181B"
+              fontFamily="Inter, Helvetica, Arial, sans-serif"
+              fontWeight="800"
+              fontSize="1.55"
+            >
+              SIDE
+            </text>
+            <text
+              x={7.5}
+              y={24.2}
+              textAnchor="middle"
+              fill={project.secondaryColor}
+              fontFamily="Inter, Helvetica, Arial, sans-serif"
+              fontWeight="900"
+              fontSize="6.8"
+            >
+              {side === 'A' ? '1' : '2'}
+            </text>
+            <text
+              x={7.5}
+              y={27.2}
+              textAnchor="middle"
+              fill="#44403C"
+              fontFamily="JetBrains Mono, monospace"
+              fontWeight="700"
+              fontSize="1.45"
+            >
+              {formatDuration(sideTotalSec)}
+            </text>
+          </g>
+        ) : isTDK ? (
           <g>
             <rect x={3.3} y={15.2} width={8.4} height={8.4} fill={project.accentColor} />
             <text
@@ -234,40 +327,88 @@ export const SingleCassetteLabelSvg: React.FC<SingleCassetteLabelProps> = ({
         )}
 
         {/* Right Wing: Technical Spec (Dolby B-NR / 120µs) */}
-        <g transform="translate(75.5, 16.5)">
-          {project.dolbySystem !== 'NONE' && (
-            <DolbyVectorLogo
-              x={3.2}
+        {isAwesomeMix ? (
+          <g transform="translate(76.8, 14.8)">
+            <rect
+              x={0}
               y={0}
-              width={5.6}
-              height={3.6}
-              color={paper.textHex}
-              showText={false}
+              width={9.4}
+              height={13.5}
+              rx={1}
+              fill="#FAF5E8"
+              stroke="#18181B"
+              strokeWidth="0.4"
             />
-          )}
-          <text
-            x={6}
-            y={6.4}
-            textAnchor="middle"
-            fill={paper.textHex}
-            fontFamily="Inter, Helvetica, sans-serif"
-            fontWeight="700"
-            fontSize="1.5"
-          >
-            {project.dolbySystem !== 'NONE' ? `DOLBY ${project.dolbySystem}` : 'STEREO'}
-          </text>
-          <text
-            x={6}
-            y={8.8}
-            textAnchor="middle"
-            fill={paper.subTextHex}
-            fontFamily="JetBrains Mono, monospace"
-            fontWeight="600"
-            fontSize="1.45"
-          >
-            {project.tapeBias.includes('70') ? '70µs EQ' : '120µs EQ'}
-          </text>
-        </g>
+            <text
+              x={4.7}
+              y={6.8}
+              textAnchor="middle"
+              fill="#18181B"
+              fontFamily="Inter, Helvetica, Arial, sans-serif"
+              fontWeight="900"
+              fontSize="5.4"
+            >
+              {project.tapeCapacity.replace('C-', '')}
+            </text>
+            <text
+              x={4.7}
+              y={9.8}
+              textAnchor="middle"
+              fill={project.accentColor}
+              fontFamily="Inter, Helvetica, Arial, sans-serif"
+              fontWeight="800"
+              fontSize="1.45"
+            >
+              LOW
+            </text>
+            <text
+              x={4.7}
+              y={11.8}
+              textAnchor="middle"
+              fill={project.accentColor}
+              fontFamily="Inter, Helvetica, Arial, sans-serif"
+              fontWeight="800"
+              fontSize="1.45"
+            >
+              NOISE
+            </text>
+          </g>
+        ) : (
+          <g transform="translate(75.5, 16.5)">
+            {project.dolbySystem !== 'NONE' && (
+              <DolbyVectorLogo
+                x={3.2}
+                y={0}
+                width={5.6}
+                height={3.6}
+                color={paper.textHex}
+                showText={false}
+              />
+            )}
+            <text
+              x={6}
+              y={6.4}
+              textAnchor="middle"
+              fill={paper.textHex}
+              fontFamily="Inter, Helvetica, sans-serif"
+              fontWeight="700"
+              fontSize="1.5"
+            >
+              {project.dolbySystem !== 'NONE' ? `DOLBY ${project.dolbySystem}` : 'STEREO'}
+            </text>
+            <text
+              x={6}
+              y={8.8}
+              textAnchor="middle"
+              fill={paper.subTextHex}
+              fontFamily="JetBrains Mono, monospace"
+              fontWeight="600"
+              fontSize="1.45"
+            >
+              {project.tapeBias.includes('70') ? '70µs EQ' : '120µs EQ'}
+            </text>
+          </g>
+        )}
 
         {/* Bottom Apron Below Window: Clean Track Summary */}
         <line

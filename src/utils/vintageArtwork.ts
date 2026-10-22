@@ -8,6 +8,20 @@ export function getPresetCoverSvgDataUrl(preset: TemplateId | 'synthwave' | 'dar
   let svg = '';
 
   switch (preset) {
+    case 'awesome-mix-quill':
+      // Peter Quill / Star-Lord 1970s Supertape Cosmic Striping Artwork
+      svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" width="1000" height="1000">
+        <rect width="1000" height="1000" fill="#181512"/>
+        <circle cx="500" cy="460" r="290" fill="#F48C06" opacity="0.16"/>
+        <rect x="0" y="310" width="1000" height="75" fill="#FAA307"/>
+        <rect x="0" y="400" width="1000" height="90" fill="#E85D04"/>
+        <rect x="0" y="505" width="1000" height="95" fill="#D00000"/>
+        <rect x="0" y="615" width="1000" height="55" fill="#9D0208"/>
+        <circle cx="500" cy="485" r="190" fill="#EADFC5" stroke="#181512" stroke-width="18"/>
+        <circle cx="500" cy="485" r="55" fill="#181512"/>
+      </svg>`;
+      break;
+
     case 'full-bleed-art':
       // Full-bleed warm 70s Autumn illustration (inspired by Autumn Tape II / #FCD8B7)
       svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" width="1000" height="1000">

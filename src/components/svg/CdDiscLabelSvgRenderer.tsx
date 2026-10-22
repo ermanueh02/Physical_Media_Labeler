@@ -164,6 +164,58 @@ export const CdDiscLabelSvgRenderer: React.FC<CdDiscLabelSvgRendererProps> = ({
                 {truncate(project.albumTitle, 26)}
               </text>
             </g>
+          ) : project.templateId === 'awesome-mix-quill' ? (
+            // Peter Quill's "Awesome Mix" 1970s Striped Disc Label
+            <g>
+              <rect x={0} y={0} width={outerD} height={outerD} fill="#FAF4E4" />
+              {[13, 19, 25, 31].map((ly) => (
+                <line
+                  key={`cd-disc-am-${ly}`}
+                  x1={10}
+                  y1={ly}
+                  x2={outerD - 10}
+                  y2={ly}
+                  stroke="#B8AA91"
+                  strokeWidth="0.22"
+                />
+              ))}
+              <text
+                x={cx}
+                y={23.5}
+                textAnchor="middle"
+                fill="#111111"
+                fontFamily="'Caveat', cursive, sans-serif"
+                fontWeight="700"
+                fontSize="8.2"
+                transform={`rotate(-1.2, ${cx}, 23.5)`}
+              >
+                {truncate(project.albumTitle.toUpperCase(), 22)}
+              </text>
+              <text
+                x={cx}
+                y={30}
+                textAnchor="middle"
+                fill="#78350F"
+                fontFamily="'Caveat', cursive, sans-serif"
+                fontWeight="700"
+                fontSize="4.2"
+              >
+                {truncate(project.albumArtist, 28)}
+              </text>
+              {/* 1970s Stripes Across Center of Disc */}
+              <rect x={0} y={35} width={outerD} height={4.5} fill="#F59E0B" />
+              <rect x={0} y={39.5} width={outerD} height={4.5} fill="#EA580C" />
+              <rect x={0} y={44} width={outerD} height={5} fill="#B91C1C" />
+              <rect x={0} y={49} width={outerD} height={16} fill="#18181B" />
+              <circle
+                cx={cx}
+                cy={cy}
+                r={outerR - 2.2}
+                fill="none"
+                stroke="#18181B"
+                strokeWidth="0.7"
+              />
+            </g>
           ) : (
             // Classic Commercial / Vintage Label CD Disc Face (CBS, EMI, Arista, Warner, DG)
             <g>

@@ -218,6 +218,200 @@ export const JCardSvgRenderer: React.FC<JCardSvgRendererProps> = ({
     }
 
     switch (project.templateId) {
+      case 'awesome-mix-quill': {
+        // Plantilla Awesome Mix Vol. 1 & Vol. 2 (Peter Quill / Star-Lord)
+        // Papel marfil envejecido de los 70, cartela pautada superior con "AWESOME MIX VOL. 1" en rotulador negro,
+        // franjas retro horizontales (ámbar, naranja quemado, rojo carmesí y carbón) e índice manuscrito en portada.
+        const isHw = project.typography === 'handwritten-pen';
+        const padX = frontX + 4.5;
+        const innerW = frontW - 9; // 56 mm
+
+        return (
+          <g>
+            {/* Fondo marfil cálido años 70 */}
+            <rect x={frontX} y={0} width={frontW} height={cardH} fill={paper.bgHex} />
+
+            {/* Cartela pautada superior estilo etiqueta de cinta virgen 1974 */}
+            <rect
+              x={padX}
+              y={5}
+              width={innerW}
+              height={16.5}
+              rx={1.2}
+              fill="#FAF5E8"
+              stroke="#18181B"
+              strokeWidth="0.45"
+            />
+            <line
+              x1={padX + 2.5}
+              y1={12.5}
+              x2={padX + innerW - 2.5}
+              y2={12.5}
+              stroke="#A8A29E"
+              strokeWidth="0.22"
+            />
+            <line
+              x1={padX + 2.5}
+              y1={18.2}
+              x2={padX + innerW - 2.5}
+              y2={18.2}
+              stroke="#A8A29E"
+              strokeWidth="0.22"
+            />
+
+            {/* Título en rotulador negro grueso ("AWESOME MIX VOL. 1") */}
+            <text
+              x={frontX + frontW / 2}
+              y={isHw ? 11.8 : 11.2}
+              textAnchor="middle"
+              fill="#18181B"
+              fontFamily={fontFamily}
+              fontWeight="800"
+              fontSize={isHw ? '6.2' : '4.2'}
+              letterSpacing={isHw ? '0.08' : '0.2'}
+            >
+              {truncate(project.albumTitle, 24)}
+            </text>
+            <text
+              x={frontX + frontW / 2}
+              y={isHw ? 17.5 : 17.0}
+              textAnchor="middle"
+              fill="#44403C"
+              fontFamily={fontFamily}
+              fontWeight="700"
+              fontSize={isHw ? '3.4' : '2.3'}
+            >
+              {truncate(project.albumArtist, 30)}
+            </text>
+
+            {/* Las 4 Franjas Horizontales Icónicas años 70 (Ámbar, Naranja Quemado, Rojo Carmesí y Negro) */}
+            <g transform="translate(0, 24)">
+              <rect x={frontX} y={0} width={frontW} height={3.6} fill="#FAA307" />
+              <rect x={frontX} y={3.6} width={frontW} height={4.4} fill={project.accentColor} />
+              <rect x={frontX} y={8.0} width={frontW} height={4.8} fill={project.secondaryColor} />
+              <rect x={frontX} y={12.8} width={frontW} height={2.6} fill="#18181B" />
+
+              {/* Insignia lateral "60" / "90" estilo Supertape sobre las franjas */}
+              <rect
+                x={frontX + frontW - 15.5}
+                y={1.6}
+                width={11}
+                height={11.5}
+                rx={1.2}
+                fill="#FAF5E8"
+                stroke="#18181B"
+                strokeWidth="0.45"
+              />
+              <text
+                x={frontX + frontW - 10}
+                y={8.4}
+                textAnchor="middle"
+                fill="#18181B"
+                fontFamily="Inter, Helvetica, Arial, sans-serif"
+                fontWeight="900"
+                fontSize="5.2"
+              >
+                {project.tapeCapacity.replace('C-', '')}
+              </text>
+              <text
+                x={frontX + frontW - 10}
+                y={11.6}
+                textAnchor="middle"
+                fill={project.secondaryColor}
+                fontFamily="Inter, Helvetica, Arial, sans-serif"
+                fontWeight="800"
+                fontSize="1.45"
+              >
+                MIN
+              </text>
+
+              <text
+                x={padX + 1}
+                y={14.6}
+                fill="#FAF5E8"
+                fontFamily="Inter, Helvetica, Arial, sans-serif"
+                fontWeight="800"
+                fontSize="1.65"
+                letterSpacing="0.25"
+              >
+                {project.stereoText.toUpperCase()}
+              </text>
+            </g>
+
+            {/* Renglones pautados con el Tracklist manuscrito de Awesome Mix en portada */}
+            <g transform={`translate(${padX}, 43.5)`}>
+              {project.tracks.slice(0, 10).map((t, idx) => {
+                const rowY = idx * 4.75;
+                const hasArtist =
+                  t.artist &&
+                  t.artist.trim() !== '' &&
+                  t.artist.toLowerCase() !== project.albumArtist.toLowerCase();
+                const lineText = hasArtist ? `${t.title} — ${t.artist}` : t.title;
+                return (
+                  <g key={t.id}>
+                    <line
+                      x1={0}
+                      y1={rowY + 3.6}
+                      x2={innerW}
+                      y2={rowY + 3.6}
+                      stroke="#78716C"
+                      strokeWidth="0.18"
+                      opacity="0.45"
+                    />
+                    <text
+                      x={0}
+                      y={rowY + 2.8}
+                      fill={project.secondaryColor}
+                      fontFamily="Inter, Helvetica, sans-serif"
+                      fontWeight="800"
+                      fontSize="1.8"
+                    >
+                      {t.side}
+                      {idx + 1}
+                    </text>
+                    <text
+                      x={5.2}
+                      y={rowY + 2.9}
+                      fill={paper.textHex}
+                      fontFamily={fontFamily}
+                      fontWeight="700"
+                      fontSize={isHw ? '3.25' : '2.15'}
+                    >
+                      {truncate(lineText, 27)}
+                    </text>
+                    <text
+                      x={innerW}
+                      y={rowY + 2.8}
+                      textAnchor="end"
+                      fill={paper.subTextHex}
+                      fontFamily="JetBrains Mono, monospace"
+                      fontSize="1.65"
+                    >
+                      {formatDuration(t.durationSec)}
+                    </text>
+                  </g>
+                );
+              })}
+            </g>
+
+            {/* Pie técnico años 70 */}
+            <rect x={frontX} y={95.5} width={frontW} height={6.5} fill="#18181B" />
+            <text
+              x={frontX + frontW / 2}
+              y={99.6}
+              textAnchor="middle"
+              fill="#FAA307"
+              fontFamily="Inter, Helvetica, Arial, sans-serif"
+              fontWeight="800"
+              fontSize="1.85"
+              letterSpacing="0.3"
+            >
+              {project.recordLabel.toUpperCase()} • {project.catalogNumber}
+            </text>
+          </g>
+        );
+      }
+
       case 'cbs-epic': {
         const artSize = 52;
         const artX = frontX + (frontW - artSize) / 2;
@@ -1551,6 +1745,77 @@ export const JCardSvgRenderer: React.FC<JCardSvgRendererProps> = ({
             letterSpacing={isHandwritten ? '0.05' : '0.15'}
           >
             {truncate(project.albumTitle, 28)}
+          </text>
+        </g>
+      );
+    }
+
+    if (project.templateId === 'awesome-mix-quill') {
+      const spineCenterX = spineX + spineW / 2;
+      const isHw = project.typography === 'handwritten-pen';
+      return (
+        <g>
+          <rect x={spineX} y={0} width={spineW} height={cardH} fill={paper.bgHex} />
+
+          {/* Franjas superiores años 70 en el lomo */}
+          <rect x={spineX} y={0} width={spineW} height={5} fill="#18181B" />
+          <rect x={spineX} y={5} width={spineW} height={3.5} fill="#FAA307" />
+          <rect x={spineX} y={8.5} width={spineW} height={4} fill={project.accentColor} />
+          <rect x={spineX} y={12.5} width={spineW} height={4.5} fill={project.secondaryColor} />
+
+          {/* Insignia 60 / 90 en la parte superior del lomo */}
+          <rect
+            x={spineX + 1.8}
+            y={19.5}
+            width={spineW - 3.6}
+            height={7.5}
+            rx={1}
+            fill="#FAF5E8"
+            stroke="#18181B"
+            strokeWidth="0.35"
+          />
+          <text
+            x={spineCenterX}
+            y={24.8}
+            textAnchor="middle"
+            fill="#18181B"
+            fontFamily="Inter, Helvetica, Arial, sans-serif"
+            fontWeight="900"
+            fontSize="3.8"
+          >
+            {project.tapeCapacity.replace('C-', '')}
+          </text>
+
+          {/* Título en rotulador manuscrito a lo largo del lomo */}
+          <g transform={`translate(${spineCenterX + (isHw ? 1.2 : 0.6)}, 58) rotate(-90)`}>
+            <text
+              x={0}
+              y={0}
+              textAnchor="middle"
+              fill="#18181B"
+              fontFamily={fontFamily}
+              fontWeight="800"
+              fontSize={isHw ? '5.4' : '3.4'}
+              letterSpacing="0.14"
+            >
+              {truncate(project.albumTitle, 26)}
+            </text>
+          </g>
+
+          {/* Franjas inferiores años 70 en el lomo */}
+          <rect x={spineX} y={87.5} width={spineW} height={4} fill={project.secondaryColor} />
+          <rect x={spineX} y={91.5} width={spineW} height={4} fill={project.accentColor} />
+          <rect x={spineX} y={95.5} width={spineW} height={6.5} fill="#18181B" />
+          <text
+            x={spineCenterX}
+            y={99.6}
+            textAnchor="middle"
+            fill="#FAA307"
+            fontFamily="Inter, Helvetica, Arial, sans-serif"
+            fontWeight="900"
+            fontSize="1.65"
+          >
+            {truncate(project.catalogNumber, 8)}
           </text>
         </g>
       );
