@@ -215,7 +215,7 @@ export const Norelco3DMockup: React.FC<Norelco3DMockupProps> = ({ project }) => 
       {/* Floating Minimal Bottom Bar */}
       <div
         onMouseDown={(e) => e.stopPropagation()}
-        className="fixed bottom-5 flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-zinc-900/90 border border-zinc-800/90 text-[11px] text-zinc-400 backdrop-blur"
+        className="fixed bottom-5 flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-white/90 dark:bg-zinc-900/90 border border-stone-300 dark:border-zinc-800/90 text-[11px] text-stone-600 dark:text-zinc-400 shadow-lg backdrop-blur"
       >
         <button
           type="button"
@@ -223,48 +223,48 @@ export const Norelco3DMockup: React.FC<Norelco3DMockupProps> = ({ project }) => 
             setRotY(-26);
             setRotX(10);
           }}
-          className="hover:text-zinc-100 transition"
+          className="hover:text-stone-900 dark:hover:text-zinc-100 transition"
         >
           3/4
         </button>
-        <span className="text-zinc-700">·</span>
+        <span className="text-stone-300 dark:text-zinc-700">·</span>
         <button
           type="button"
           onClick={() => {
             setRotY(-68);
             setRotX(6);
           }}
-          className="hover:text-zinc-100 transition"
+          className="hover:text-stone-900 dark:hover:text-zinc-100 transition"
         >
           Lomo
         </button>
-        <span className="text-zinc-700">·</span>
+        <span className="text-stone-300 dark:text-zinc-700">·</span>
         <button
           type="button"
           onClick={() => {
             setRotY(0);
             setRotX(0);
           }}
-          className="hover:text-zinc-100 transition"
+          className="hover:text-stone-900 dark:hover:text-zinc-100 transition"
         >
           Frontal
         </button>
-        <span className="text-zinc-700">·</span>
+        <span className="text-stone-300 dark:text-zinc-700">·</span>
         <button
           type="button"
           onClick={() => {
             setRotY(-148);
             setRotX(8);
           }}
-          className="hover:text-zinc-100 transition"
+          className="hover:text-stone-900 dark:hover:text-zinc-100 transition"
         >
           Trasera
         </button>
-        <span className="text-zinc-700">|</span>
+        <span className="text-stone-300 dark:text-zinc-700">|</span>
         <button
           type="button"
           onClick={() => setActiveSide((s) => (s === 'A' ? 'B' : 'A'))}
-          className="text-amber-400 hover:text-amber-300 font-medium"
+          className="text-amber-600 dark:text-amber-400 hover:text-amber-500 font-semibold"
         >
           Cara {activeSide}
         </button>
@@ -274,7 +274,7 @@ export const Norelco3DMockup: React.FC<Norelco3DMockupProps> = ({ project }) => 
             setRotY(-26);
             setRotX(10);
           }}
-          className="text-zinc-500 hover:text-zinc-200 ml-1"
+          className="text-stone-400 dark:text-zinc-500 hover:text-stone-800 dark:hover:text-zinc-200 ml-1"
           title="Restablecer ángulo"
         >
           <RotateCcw className="w-3 h-3" />

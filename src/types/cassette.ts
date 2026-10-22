@@ -3,7 +3,12 @@ export type TemplateId =
   | 'emi-harvest'
   | 'warner-sire'
   | 'deutsche-grammophon'
-  | 'mixtape-tdk-maxell';
+  | 'mixtape-tdk-maxell'
+  | 'ecm-records'
+  | 'factory-benelux'
+  | 'blue-note-rvg'
+  | 'basf-chromdioxid'
+  | 'sub-pop-indie';
 
 export type FoldFormat = 'j-standard' | 'j-plus-1' | 'j-plus-2';
 
@@ -26,6 +31,10 @@ export type TypographyPreset =
 export type CoverFilter = 'none' | 'warm-70s' | 'high-contrast' | 'monochrome';
 
 export type PreviewMode = 'flat-print' | 'mockup-3d' | 'labels-view';
+
+export type PdfExportMode = 'separate-2-pages' | 'jcard-only' | 'labels-only';
+
+export type ThemeMode = 'light' | 'dark' | 'system';
 
 export interface Track {
   id: string;
@@ -84,7 +93,7 @@ export const PHYSICAL_SPECS = {
   LABEL_REEL_SPACING_MM: 42.5,
   LABEL_REEL_DIAMETER_MM: 12.8,
   DPI: 300,
-  MM_TO_PX_300DPI: 300 / 25.4, // ~11.811023622 px/mm
+  MM_TO_PX_300DPI: 300 / 25.4,
 } as const;
 
 export const TAPE_CAPACITIES: Record<
@@ -177,10 +186,9 @@ export const HISTORICAL_TEMPLATES: TemplateMetadata[] = [
   {
     id: 'cbs-epic',
     name: 'CBS / Epic',
-    era: 'ca. 1978–1985',
-    region: 'España y Europa',
-    description:
-      'Portada cuadrada superior con filete doble; faldón crema con catálogo en rojo teja, logo Dolby System, Helvética mayúscula centrada y "ESTÉREO CASSETTE".',
+    era: '1978–1985',
+    region: 'España / Europa',
+    description: 'Portada cuadrada con filete doble y faldón crema con catálogo en rojo teja.',
     defaultAccent: '#B83227',
     defaultSecondary: '#1A1815',
     defaultPaper: 'editorial-cream',
@@ -191,11 +199,10 @@ export const HISTORICAL_TEMPLATES: TemplateMetadata[] = [
   },
   {
     id: 'emi-harvest',
-    name: 'EMI / Harvest / Odeon',
-    era: 'Años 1971–1979',
-    region: 'UK y Europa',
-    description:
-      'Marco perimetral grueso en negro o crema; arte cuadrado centrado; bloque tipográfico serif sobrio (Garamond), indicación de sesgo y emblema rectangular EMI.',
+    name: 'EMI / Harvest',
+    era: '1971–1979',
+    region: 'UK / Europa',
+    description: 'Marco perimetral oscuro, arte cuadrado centrado y tipografía serif Garamond.',
     defaultAccent: '#8C6239',
     defaultSecondary: '#141413',
     defaultPaper: 'aged-ivory',
@@ -207,46 +214,113 @@ export const HISTORICAL_TEMPLATES: TemplateMetadata[] = [
   {
     id: 'warner-sire',
     name: 'Warner Bros. / Sire',
-    era: 'Años 1981–1989',
-    region: 'EE.UU. / Internacional',
-    description:
-      'Diseño con franja superior/lateral de color sólido, tipografía condensada en bloque, sellos de control de calidad HX PRO y estética comercial años 80.',
+    era: '1981–1989',
+    region: 'EE.UU. / Intl',
+    description: 'Banda superior de color sólido con tipografía condensada y pie técnico HX PRO.',
     defaultAccent: '#D9381E',
     defaultSecondary: '#0F172A',
     defaultPaper: 'off-white',
     defaultTypography: 'condensed-80s',
-    defaultLabel: 'SIRE / WARNER BROS.',
+    defaultLabel: 'SIRE / WARNER',
     defaultCatalog: '9 23801-4',
-    defaultStereoText: 'SUPER HIGH QUALITY • HX PRO B NR',
+    defaultStereoText: 'HX PRO B NR • STEREO',
   },
   {
     id: 'deutsche-grammophon',
     name: 'Deutsche Grammophon',
-    era: 'Clásica / Archiv 70s–80s',
-    region: 'Alemania Occidental',
-    description:
-      'Cartelera superior amarilla ocre con marco institucional triple y corona clásica; composición rigurosa centrada con fotografía debajo.',
+    era: '1972–1986',
+    region: 'Alemania',
+    description: 'Cartelera superior amarilla ocre con marco institucional y portada debajo.',
     defaultAccent: '#E5B822',
     defaultSecondary: '#18181B',
     defaultPaper: 'off-white',
     defaultTypography: 'classical-dg',
     defaultLabel: 'DEUTSCHE GRAMMOPHON',
-    defaultCatalog: '3302 019 • STEREO',
+    defaultCatalog: '3302 019',
     defaultStereoText: 'CHROMDIOXID 70 µs',
   },
   {
     id: 'mixtape-tdk-maxell',
-    name: 'Mixtape Virgen (TDK SA / Maxell XL-II)',
-    era: 'Finales 70s / Años 80',
-    region: 'Japón / Home Taping',
-    description:
-      'Fondo con cuadrícula milimetrada técnica, franjas horizontales bicolores (dorado/negro), casillas de verificación NR/EQ y tipografía de máquina de escribir.',
+    name: 'TDK SA / Maxell XL-II',
+    era: '1979–1988',
+    region: 'Japón / Mixtape',
+    description: 'Cuadrícula milimetrada sutil, franja oro/negro e índice en máquina de escribir.',
     defaultAccent: '#B89241',
     defaultSecondary: '#1E3A8A',
     defaultPaper: 'off-white',
     defaultTypography: 'typewriter-mono',
-    defaultLabel: 'TDK SA-90 / MAXELL XL-II',
-    defaultCatalog: 'INDEX NO. 01-84',
-    defaultStereoText: 'HIGH POSITION (TYPE II) • 70µs EQ',
+    defaultLabel: 'TDK SA-90',
+    defaultCatalog: 'INDEX NO. 01',
+    defaultStereoText: 'HIGH POSITION (TYPE II) 70µs',
+  },
+  {
+    id: 'ecm-records',
+    name: 'ECM Records (Múnich)',
+    era: '1975–1989',
+    region: 'Alemania / Jazz',
+    description: 'Diseño ultra-minimalista con amplio aire blanco, tipografía fina alineada a la izquierda.',
+    defaultAccent: '#2B5B84',
+    defaultSecondary: '#18181B',
+    defaultPaper: 'off-white',
+    defaultTypography: 'helvetica-univers',
+    defaultLabel: 'ECM RECORDS',
+    defaultCatalog: 'ECM 1064',
+    defaultStereoText: 'EDITION OF CONTEMPORARY MUSIC',
+  },
+  {
+    id: 'factory-benelux',
+    name: 'Factory Records (FAC)',
+    era: '1980–1988',
+    region: 'Mánchester UK',
+    description: 'Retícula suiza industrial de Peter Saville con filetes técnicos y numeración FAC.',
+    defaultAccent: '#475569',
+    defaultSecondary: '#0F172A',
+    defaultPaper: 'pearl-grey',
+    defaultTypography: 'helvetica-univers',
+    defaultLabel: 'FACTORY',
+    defaultCatalog: 'FACT 75C',
+    defaultStereoText: 'A FACTORY CASSETTE',
+  },
+  {
+    id: 'blue-note-rvg',
+    name: 'Blue Note / Impulse!',
+    era: '1970–1978',
+    region: 'Nueva York / Jazz',
+    description: 'Franja tipográfica asimétrica al estilo Reid Miles con portada e índice frontal.',
+    defaultAccent: '#0284C7',
+    defaultSecondary: '#0F172A',
+    defaultPaper: 'editorial-cream',
+    defaultTypography: 'condensed-80s',
+    defaultLabel: 'BLUE NOTE',
+    defaultCatalog: 'BST-84157',
+    defaultStereoText: 'AUDIOPHILE STEREO TAPE',
+  },
+  {
+    id: 'basf-chromdioxid',
+    name: 'BASF Chromdioxid (Índice)',
+    era: '1976–1984',
+    region: 'Europa / Home Tape',
+    description: 'Formato práctico de archivo: miniatura superior y listado completo de pistas en portada.',
+    defaultAccent: '#EA580C',
+    defaultSecondary: '#18181B',
+    defaultPaper: 'editorial-cream',
+    defaultTypography: 'typewriter-mono',
+    defaultLabel: 'BASF CrO2',
+    defaultCatalog: 'LH SUPER SM',
+    defaultStereoText: 'CHROMDIOXID 70µs • HIGH BIAS',
+  },
+  {
+    id: 'sub-pop-indie',
+    name: 'Rough Trade / SST (Indie)',
+    era: '1983–1989',
+    region: 'UK & US Indie',
+    description: 'Práctico diseño de sello independiente con portada arriba y doble columna A/B debajo.',
+    defaultAccent: '#18181B',
+    defaultSecondary: '#B83227',
+    defaultPaper: 'editorial-cream',
+    defaultTypography: 'helvetica-univers',
+    defaultLabel: 'ROUGH TRADE',
+    defaultCatalog: 'ROUGH C69',
+    defaultStereoText: 'STEREO ANALOGUE MASTER',
   },
 ];

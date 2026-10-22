@@ -208,14 +208,14 @@ export const TracklistIngestPanel: React.FC<TracklistIngestPanelProps> = ({
   return (
     <div className="space-y-5">
       {/* Clean Source Switcher */}
-      <div className="grid grid-cols-3 gap-1 p-1 bg-zinc-900/80 rounded-lg border border-zinc-800/80">
+      <div className="grid grid-cols-3 gap-1 p-1 bg-stone-200/70 dark:bg-zinc-900/80 rounded-lg border border-stone-200 dark:border-zinc-800/80">
         <button
           type="button"
           onClick={() => setActiveTab('manual')}
           className={`flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs font-medium transition ${
             activeTab === 'manual'
-              ? 'bg-zinc-800 text-zinc-100 shadow-sm'
-              : 'text-zinc-500 hover:text-zinc-300'
+              ? 'bg-white dark:bg-zinc-800 text-stone-900 dark:text-zinc-100 shadow-sm'
+              : 'text-stone-500 dark:text-zinc-500 hover:text-stone-800 dark:hover:text-zinc-300'
           }`}
         >
           <ListMusic className="w-3.5 h-3.5" />
@@ -226,8 +226,8 @@ export const TracklistIngestPanel: React.FC<TracklistIngestPanelProps> = ({
           onClick={() => setActiveTab('spotify')}
           className={`flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs font-medium transition ${
             activeTab === 'spotify'
-              ? 'bg-zinc-800 text-emerald-400 shadow-sm'
-              : 'text-zinc-500 hover:text-zinc-300'
+              ? 'bg-white dark:bg-zinc-800 text-emerald-600 dark:text-emerald-400 shadow-sm'
+              : 'text-stone-500 dark:text-zinc-500 hover:text-stone-800 dark:hover:text-zinc-300'
           }`}
         >
           <Music className="w-3.5 h-3.5" />
@@ -238,8 +238,8 @@ export const TracklistIngestPanel: React.FC<TracklistIngestPanelProps> = ({
           onClick={() => setActiveTab('m3u')}
           className={`flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs font-medium transition ${
             activeTab === 'm3u'
-              ? 'bg-zinc-800 text-amber-400 shadow-sm'
-              : 'text-zinc-500 hover:text-zinc-300'
+              ? 'bg-white dark:bg-zinc-800 text-amber-600 dark:text-amber-400 shadow-sm'
+              : 'text-stone-500 dark:text-zinc-500 hover:text-stone-800 dark:hover:text-zinc-300'
           }`}
         >
           <FileText className="w-3.5 h-3.5" />
@@ -251,8 +251,8 @@ export const TracklistIngestPanel: React.FC<TracklistIngestPanelProps> = ({
         <div
           className={`flex items-center justify-between gap-2 px-3 py-2 rounded-lg border text-xs ${
             ingestMessage.type === 'success'
-              ? 'bg-emerald-950/30 border-emerald-800/50 text-emerald-300'
-              : 'bg-red-950/30 border-red-800/50 text-red-300'
+              ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-700 dark:text-emerald-300'
+              : 'bg-red-500/10 border-red-500/40 text-red-700 dark:text-red-300'
           }`}
         >
           <span className="flex items-center gap-1.5">
@@ -262,7 +262,7 @@ export const TracklistIngestPanel: React.FC<TracklistIngestPanelProps> = ({
           <button
             type="button"
             onClick={() => setIngestMessage(null)}
-            className="text-zinc-500 hover:text-zinc-200"
+            className="text-stone-400 hover:text-stone-700 dark:hover:text-zinc-200"
           >
             ✕
           </button>
@@ -271,7 +271,7 @@ export const TracklistIngestPanel: React.FC<TracklistIngestPanelProps> = ({
 
       {/* SPOTIFY TAB */}
       {activeTab === 'spotify' && (
-        <div className="space-y-3 p-3 rounded-lg bg-zinc-900/40 border border-zinc-800/80">
+        <div className="space-y-3 p-3 rounded-lg bg-white/80 dark:bg-zinc-900/40 border border-stone-200 dark:border-zinc-800/80">
           <form onSubmit={handleSpotifyFetch} className="space-y-2">
             <div className="flex gap-1.5">
               <input
@@ -279,7 +279,7 @@ export const TracklistIngestPanel: React.FC<TracklistIngestPanelProps> = ({
                 value={spotifyUrl}
                 onChange={(e) => setSpotifyUrl(e.target.value)}
                 placeholder="https://open.spotify.com/album/..."
-                className="flex-1 bg-zinc-900 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs text-zinc-100 focus:outline-none focus:border-emerald-500/70"
+                className="flex-1 bg-stone-50 dark:bg-zinc-900 border border-stone-200 dark:border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs text-stone-900 dark:text-zinc-100 focus:outline-none focus:border-emerald-500"
               />
               <button
                 type="submit"
@@ -292,7 +292,7 @@ export const TracklistIngestPanel: React.FC<TracklistIngestPanelProps> = ({
             <button
               type="button"
               onClick={() => setShowSpotifyCreds((v) => !v)}
-              className="text-[10px] text-zinc-500 hover:text-zinc-300 flex items-center gap-1"
+              className="text-[10px] text-stone-500 dark:text-zinc-500 hover:text-stone-800 dark:hover:text-zinc-300 flex items-center gap-1"
             >
               <KeyRound className="w-3 h-3" />
               {showSpotifyCreds ? 'Ocultar credenciales API' : 'Usar Client ID / Token propio (opcional)'}
@@ -304,28 +304,28 @@ export const TracklistIngestPanel: React.FC<TracklistIngestPanelProps> = ({
                   value={clientId}
                   onChange={(e) => setClientId(e.target.value)}
                   placeholder="Client ID"
-                  className="bg-zinc-900 border border-zinc-800 rounded px-2 py-1 text-[11px] text-zinc-200"
+                  className="bg-stone-50 dark:bg-zinc-900 border border-stone-200 dark:border-zinc-800 rounded px-2 py-1 text-[11px] text-stone-800 dark:text-zinc-200"
                 />
                 <input
                   type="password"
                   value={clientSecret}
                   onChange={(e) => setClientSecret(e.target.value)}
                   placeholder="Client Secret"
-                  className="bg-zinc-900 border border-zinc-800 rounded px-2 py-1 text-[11px] text-zinc-200"
+                  className="bg-stone-50 dark:bg-zinc-900 border border-stone-200 dark:border-zinc-800 rounded px-2 py-1 text-[11px] text-stone-800 dark:text-zinc-200"
                 />
                 <input
                   type="password"
                   value={accessToken}
                   onChange={(e) => setAccessToken(e.target.value)}
                   placeholder="O Bearer Token directo"
-                  className="col-span-2 bg-zinc-900 border border-zinc-800 rounded px-2 py-1 text-[11px] text-zinc-200"
+                  className="col-span-2 bg-stone-50 dark:bg-zinc-900 border border-stone-200 dark:border-zinc-800 rounded px-2 py-1 text-[11px] text-stone-800 dark:text-zinc-200"
                 />
               </div>
             )}
           </form>
 
-          <div className="space-y-1 pt-2 border-t border-zinc-800/60">
-            <span className="text-[10px] font-mono uppercase text-zinc-500">
+          <div className="space-y-1 pt-2 border-t border-stone-200 dark:border-zinc-800/60">
+            <span className="text-[10px] font-mono uppercase text-stone-400 dark:text-zinc-500">
               Ejemplos de Época
             </span>
             <div className="grid grid-cols-1 gap-1">
@@ -337,10 +337,12 @@ export const TracklistIngestPanel: React.FC<TracklistIngestPanelProps> = ({
                     setSpotifyUrl(preset.spotifyUrl);
                     onChangeProject(() => structuredClone(preset.project));
                   }}
-                  className="flex items-center justify-between px-2.5 py-1.5 rounded bg-zinc-900/60 hover:bg-zinc-800/80 text-left text-xs transition"
+                  className="flex items-center justify-between px-2.5 py-1.5 rounded bg-stone-100/80 dark:bg-zinc-900/60 hover:bg-stone-200/80 dark:hover:bg-zinc-800/80 text-left text-xs transition"
                 >
-                  <span className="text-zinc-300 truncate">{preset.project.albumTitle}</span>
-                  <span className="text-[10px] font-mono text-zinc-500 shrink-0 ml-2">
+                  <span className="text-stone-700 dark:text-zinc-300 truncate">
+                    {preset.project.albumTitle}
+                  </span>
+                  <span className="text-[10px] font-mono text-stone-500 dark:text-zinc-500 shrink-0 ml-2">
                     {preset.badge}
                   </span>
                 </button>
@@ -352,7 +354,7 @@ export const TracklistIngestPanel: React.FC<TracklistIngestPanelProps> = ({
 
       {/* M3U TAB */}
       {activeTab === 'm3u' && (
-        <div className="space-y-2.5 p-3 rounded-lg bg-zinc-900/40 border border-zinc-800/80">
+        <div className="space-y-2.5 p-3 rounded-lg bg-white/80 dark:bg-zinc-900/40 border border-stone-200 dark:border-zinc-800/80">
           <input
             ref={m3uFileInputRef}
             type="file"
@@ -364,15 +366,15 @@ export const TracklistIngestPanel: React.FC<TracklistIngestPanelProps> = ({
             <button
               type="button"
               onClick={() => m3uFileInputRef.current?.click()}
-              className="flex-1 py-2 px-3 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs text-zinc-200 font-medium flex items-center justify-center gap-1.5 transition"
+              className="flex-1 py-2 px-3 rounded-lg bg-stone-200/80 dark:bg-zinc-800 hover:bg-stone-300 dark:hover:bg-zinc-700 text-xs text-stone-800 dark:text-zinc-200 font-medium flex items-center justify-center gap-1.5 transition"
             >
-              <Upload className="w-3.5 h-3.5 text-amber-400" />
+              <Upload className="w-3.5 h-3.5 text-amber-500" />
               Abrir archivo .M3U / .M3U8
             </button>
             <button
               type="button"
               onClick={handleExportCurrentAsM3u8}
-              className="py-2 px-2.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-xs text-zinc-400 hover:text-zinc-200 flex items-center gap-1"
+              className="py-2 px-2.5 rounded-lg bg-stone-100 dark:bg-zinc-900 hover:bg-stone-200 dark:hover:bg-zinc-800 border border-stone-200 dark:border-zinc-800 text-xs text-stone-600 dark:text-zinc-400 flex items-center gap-1"
               title="Exportar lista actual a .M3U8"
             >
               <Download className="w-3.5 h-3.5" />
@@ -382,22 +384,22 @@ export const TracklistIngestPanel: React.FC<TracklistIngestPanelProps> = ({
             value={m3uRawText}
             onChange={(e) => setM3uRawText(e.target.value)}
             rows={4}
-            className="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-2 text-[11px] font-mono text-zinc-300 focus:outline-none"
+            className="w-full bg-stone-50 dark:bg-zinc-900 border border-stone-200 dark:border-zinc-800 rounded-lg p-2 text-[11px] font-mono text-stone-700 dark:text-zinc-300 focus:outline-none"
           />
           <button
             type="button"
             onClick={handleParseM3uTextarea}
-            className="w-full py-1.5 rounded-lg bg-amber-500/90 hover:bg-amber-400 text-zinc-950 font-semibold text-xs transition"
+            className="w-full py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-zinc-950 font-semibold text-xs transition"
           >
             Cargar Pistas del Texto M3U
           </button>
         </div>
       )}
 
-      {/* BALANCEO DE CARAS A / B (Compact & Minimal) */}
-      <div className="p-3 rounded-lg bg-zinc-900/40 border border-zinc-800/80 space-y-2.5">
+      {/* BALANCEO DE CARAS A / B */}
+      <div className="p-3 rounded-lg bg-white/80 dark:bg-zinc-900/40 border border-stone-200 dark:border-zinc-800/80 space-y-2.5">
         <div className="flex items-center justify-between">
-          <span className="text-[11px] font-mono uppercase tracking-wider text-zinc-400">
+          <span className="text-[11px] font-mono uppercase tracking-wider text-stone-500 dark:text-zinc-400">
             Duración por Cara
           </span>
           <select
@@ -408,7 +410,7 @@ export const TracklistIngestPanel: React.FC<TracklistIngestPanelProps> = ({
                 tapeCapacity: e.target.value as TapeCapacity,
               }))
             }
-            className="bg-zinc-900 border border-zinc-800 rounded px-2 py-0.5 text-[11px] font-mono text-amber-400 focus:outline-none"
+            className="bg-stone-100 dark:bg-zinc-900 border border-stone-200 dark:border-zinc-800 rounded px-2 py-0.5 text-[11px] font-mono text-amber-600 dark:text-amber-400 focus:outline-none"
           >
             {(Object.keys(TAPE_CAPACITIES) as TapeCapacity[]).map((cap) => (
               <option key={cap} value={cap}>
@@ -421,16 +423,18 @@ export const TracklistIngestPanel: React.FC<TracklistIngestPanelProps> = ({
         <div className="grid grid-cols-2 gap-2">
           <div className="space-y-1">
             <div className="flex justify-between text-[11px]">
-              <span className="text-zinc-400">Cara A</span>
+              <span className="text-stone-500 dark:text-zinc-400">Cara A</span>
               <span
                 className={`font-mono ${
-                  stats.isSideAOver ? 'text-red-400 font-bold' : 'text-zinc-200'
+                  stats.isSideAOver
+                    ? 'text-red-500 font-bold'
+                    : 'text-stone-800 dark:text-zinc-200'
                 }`}
               >
                 {formatDuration(stats.sideASec)} / {formatDuration(stats.maxSideSec)}
               </span>
             </div>
-            <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+            <div className="h-1.5 bg-stone-200 dark:bg-zinc-800 rounded-full overflow-hidden">
               <div
                 className={`h-full ${stats.isSideAOver ? 'bg-red-500' : 'bg-amber-500'}`}
                 style={{ width: `${Math.min(100, stats.sideAUtilizationPct)}%` }}
@@ -440,16 +444,18 @@ export const TracklistIngestPanel: React.FC<TracklistIngestPanelProps> = ({
 
           <div className="space-y-1">
             <div className="flex justify-between text-[11px]">
-              <span className="text-zinc-400">Cara B</span>
+              <span className="text-stone-500 dark:text-zinc-400">Cara B</span>
               <span
                 className={`font-mono ${
-                  stats.isSideBOver ? 'text-red-400 font-bold' : 'text-zinc-200'
+                  stats.isSideBOver
+                    ? 'text-red-500 font-bold'
+                    : 'text-stone-800 dark:text-zinc-200'
                 }`}
               >
                 {formatDuration(stats.sideBSec)} / {formatDuration(stats.maxSideSec)}
               </span>
             </div>
-            <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+            <div className="h-1.5 bg-stone-200 dark:bg-zinc-800 rounded-full overflow-hidden">
               <div
                 className={`h-full ${stats.isSideBOver ? 'bg-red-500' : 'bg-emerald-500'}`}
                 style={{ width: `${Math.min(100, stats.sideBUtilizationPct)}%` }}
@@ -459,16 +465,16 @@ export const TracklistIngestPanel: React.FC<TracklistIngestPanelProps> = ({
         </div>
 
         {(stats.isSideAOver || stats.isSideBOver) && (
-          <div className="flex items-center gap-2 text-[11px] text-red-300 pt-0.5">
-            <AlertTriangle className="w-3.5 h-3.5 text-red-400 shrink-0" />
+          <div className="flex items-center gap-2 text-[11px] text-red-600 dark:text-red-300 pt-0.5">
+            <AlertTriangle className="w-3.5 h-3.5 text-red-500 shrink-0" />
             <span>
-              Supera el límite de {project.tapeCapacity}. Sugerido:{' '}
+              Supera {project.tapeCapacity}. Sugerido:{' '}
               <button
                 type="button"
                 onClick={() =>
                   onChangeProject((prev) => ({ ...prev, tapeCapacity: stats.recommendedTape }))
                 }
-                className="underline font-semibold text-amber-300"
+                className="underline font-semibold text-amber-600 dark:text-amber-300"
               >
                 {stats.recommendedTape}
               </button>
@@ -477,7 +483,7 @@ export const TracklistIngestPanel: React.FC<TracklistIngestPanelProps> = ({
         )}
 
         <div className="flex items-center justify-between pt-1">
-          <span className="text-[10px] font-mono text-zinc-500">
+          <span className="text-[10px] font-mono text-stone-400 dark:text-zinc-500">
             Δ {formatDuration(stats.diffSec)}
           </span>
           <div className="flex gap-1.5">
@@ -489,7 +495,7 @@ export const TracklistIngestPanel: React.FC<TracklistIngestPanelProps> = ({
                   tracks: balanceTracksSequential(prev.tracks),
                 }))
               }
-              className="px-2 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-[11px] transition"
+              className="px-2 py-1 rounded bg-stone-200/80 dark:bg-zinc-800 hover:bg-stone-300 dark:hover:bg-zinc-700 text-stone-800 dark:text-zinc-200 text-[11px] transition"
             >
               Auto-Dividir A/B
             </button>
@@ -501,7 +507,7 @@ export const TracklistIngestPanel: React.FC<TracklistIngestPanelProps> = ({
                   tracks: balanceTracksMixtapeOptimal(prev.tracks),
                 }))
               }
-              className="px-2 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-[11px] transition"
+              className="px-2 py-1 rounded bg-stone-200/80 dark:bg-zinc-800 hover:bg-stone-300 dark:hover:bg-zinc-700 text-stone-700 dark:text-zinc-300 text-[11px] transition"
             >
               Mixtape 50/50
             </button>
@@ -512,28 +518,28 @@ export const TracklistIngestPanel: React.FC<TracklistIngestPanelProps> = ({
       {/* CLEAN TRACKLIST TABLE */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <span className="text-[11px] font-mono uppercase tracking-wider text-zinc-400">
+          <span className="text-[11px] font-mono uppercase tracking-wider text-stone-500 dark:text-zinc-400">
             Pistas ({project.tracks.length})
           </span>
           <div className="flex gap-1.5">
             <button
               type="button"
               onClick={() => handleAddTrack('A')}
-              className="flex items-center gap-1 px-2 py-1 rounded bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 text-[11px]"
+              className="flex items-center gap-1 px-2 py-1 rounded bg-white dark:bg-zinc-900 hover:bg-stone-100 dark:hover:bg-zinc-800 border border-stone-200 dark:border-zinc-800 text-stone-700 dark:text-zinc-300 text-[11px]"
             >
-              <Plus className="w-3 h-3 text-amber-400" /> Cara A
+              <Plus className="w-3 h-3 text-amber-500" /> Cara A
             </button>
             <button
               type="button"
               onClick={() => handleAddTrack('B')}
-              className="flex items-center gap-1 px-2 py-1 rounded bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 text-[11px]"
+              className="flex items-center gap-1 px-2 py-1 rounded bg-white dark:bg-zinc-900 hover:bg-stone-100 dark:hover:bg-zinc-800 border border-stone-200 dark:border-zinc-800 text-stone-700 dark:text-zinc-300 text-[11px]"
             >
-              <Plus className="w-3 h-3 text-emerald-400" /> Cara B
+              <Plus className="w-3 h-3 text-emerald-500" /> Cara B
             </button>
           </div>
         </div>
 
-        <div className="divide-y divide-zinc-800/50 border border-zinc-800/80 rounded-lg bg-zinc-900/30 max-h-[380px] overflow-y-auto">
+        <div className="divide-y divide-stone-200/70 dark:divide-zinc-800/50 border border-stone-200 dark:border-zinc-800/80 rounded-lg bg-white/70 dark:bg-zinc-900/30 max-h-[380px] overflow-y-auto">
           {project.tracks.map((track, idx) => {
             const sideIndex = project.tracks
               .slice(0, idx + 1)
@@ -546,9 +552,9 @@ export const TracklistIngestPanel: React.FC<TracklistIngestPanelProps> = ({
                 onDragStart={() => handleDragStart(idx)}
                 onDragOver={(e) => handleDragOver(e, idx)}
                 onDragEnd={() => setDraggedIndex(null)}
-                className="flex items-center gap-1.5 px-2 py-1.5 text-xs hover:bg-zinc-900/80 transition"
+                className="flex items-center gap-1.5 px-2 py-1.5 text-xs hover:bg-stone-100 dark:hover:bg-zinc-900/80 transition"
               >
-                <GripVertical className="w-3.5 h-3.5 text-zinc-600 cursor-grab shrink-0" />
+                <GripVertical className="w-3.5 h-3.5 text-stone-400 dark:text-zinc-600 cursor-grab shrink-0" />
 
                 <button
                   type="button"
@@ -557,8 +563,8 @@ export const TracklistIngestPanel: React.FC<TracklistIngestPanelProps> = ({
                   }
                   className={`w-8 py-0.5 rounded font-mono text-[10px] font-bold shrink-0 ${
                     track.side === 'A'
-                      ? 'bg-amber-500/15 text-amber-300'
-                      : 'bg-emerald-500/15 text-emerald-300'
+                      ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300'
+                      : 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300'
                   }`}
                   title="Cambiar cara A/B"
                 >
@@ -570,7 +576,7 @@ export const TracklistIngestPanel: React.FC<TracklistIngestPanelProps> = ({
                   type="text"
                   value={track.title}
                   onChange={(e) => handleTrackUpdate(track.id, 'title', e.target.value)}
-                  className="flex-1 min-w-0 bg-transparent border-b border-transparent focus:border-zinc-700 px-1 py-0.5 text-xs text-zinc-200 focus:outline-none truncate"
+                  className="flex-1 min-w-0 bg-transparent border-b border-transparent focus:border-stone-400 dark:focus:border-zinc-700 px-1 py-0.5 text-xs text-stone-800 dark:text-zinc-200 focus:outline-none truncate"
                   placeholder="Título"
                 />
 
@@ -583,13 +589,13 @@ export const TracklistIngestPanel: React.FC<TracklistIngestPanelProps> = ({
                     if (sec > 0) handleTrackUpdate(track.id, 'durationSec', sec);
                     else e.target.value = formatDuration(track.durationSec);
                   }}
-                  className="w-12 bg-transparent text-right font-mono text-[11px] text-zinc-400 focus:text-zinc-100 focus:outline-none shrink-0"
+                  className="w-12 bg-transparent text-right font-mono text-[11px] text-stone-500 dark:text-zinc-400 focus:text-stone-900 dark:focus:text-zinc-100 focus:outline-none shrink-0"
                 />
 
                 <button
                   type="button"
                   onClick={() => handleDeleteTrack(track.id)}
-                  className="p-1 text-zinc-600 hover:text-red-400 shrink-0"
+                  className="p-1 text-stone-400 dark:text-zinc-600 hover:text-red-500 shrink-0"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>

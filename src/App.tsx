@@ -13,11 +13,17 @@ import {
   CheckCircle2,
   MonitorDown,
   X,
+  Sun,
+  Moon,
+  Monitor,
+  ChevronDown,
 } from 'lucide-react';
 import {
   CassetteProject,
+  PdfExportMode,
   PHYSICAL_SPECS,
   PreviewMode,
+  ThemeMode,
 } from './types/cassette';
 import { SPOTIFY_HISTORICAL_PRESETS } from './utils/spotifyConnector';
 import { JCardSvgRenderer } from './components/svg/JCardSvgRenderer';
@@ -47,6 +53,15 @@ export function App() {
   const [isExporting, setIsExporting] = useState<string | null>(null);
   const [statusToast, setStatusToast] = useState<string | null>(null);
 
+  // Theme Mode ('light' | 'dark' | 'system')
+  const [themeMode, setThemeMode] = useState<ThemeMode>(() => {
+    const saved = localStorage.getItem('norelco-theme-mode') as ThemeMode | null;
+    return saved === 'light' || saved === 'dark' || saved === 'system' ? saved : 'system';
+  });
+
+  // PDF Export Mode ('separate-2-pages' | 'jcard-only' | 'labels-only')
+  const [showPdfMenu, setShowPdfMenu] = useState<boolean>(false);
+
   // PWA Installation State
   const [deferredPwaPrompt, setDeferredPwaPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isStandaloneApp, setIsStandaloneApp] = useState<boolean>(false);
@@ -55,6 +70,22 @@ export function App() {
   const exportJCardSvgRef = useRef<SVGSVGElement>(null);
   const exportLabelsSvgRef = useRef<SVGSVGElement>(null);
   const jsonInputRef = useRef<HTMLInputElement>(null);
+
+  // Apply Light / Dark / System Theme
+  useEffect(() => {
+    localStorage.setItem('norelco-theme-mode', themeMode);
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+
+    const applyTheme = () => {
+      const isDark =
+        themeMode === 'dark' || (themeMode === 'system' && mediaQuery.matches);
+      document.documentElement.classList.toggle('dark', isDark);
+    };
+
+    applyTheme();
+    mediaQuery.addEventListener('change', applyTheme);
+    return () => mediaQuery.removeEventListener('change', applyTheme);
+  }, [themeMode]);
 
   useEffect(() => {
     const checkStandalone =
@@ -101,16 +132,24 @@ export function App() {
     }
   };
 
-  const handleExportPdf = async () => {
+  const handleExportPdf = async (mode: PdfExportMode) => {
+    setShowPdfMenu(false);
     if (!exportJCardSvgRef.current || !exportLabelsSvgRef.current) return;
     setIsExporting('pdf');
     try {
       await exportPrintReadyPdfA4(
         project,
         exportJCardSvgRef.current,
-        exportLabelsSvgRef.current
+        exportLabelsSvgRef.current,
+        mode
       );
-      triggerToast('PDF A4 (1:1 a 300 DPI) exportado.');
+      const label =
+        mode === 'jcard-only'
+          ? 'PDF A4 Solo J-Card (Cartulina) exportado.'
+          : mode === 'labels-only'
+          ? 'PDF A4 Solo Etiquetas (Pegatina) exportado.'
+          : 'PDF A4 en 2 hojas separadas (Cartulina + Pegatina) exportado.';
+      triggerToast(label);
     } catch (err) {
       console.error(err);
       triggerToast('Error al generar el PDF.');
@@ -155,6 +194,12 @@ export function App() {
     reader.readAsText(file);
   };
 
+  const cycleThemeMode = () => {
+    setThemeMode((prev) =>
+      prev === 'system' ? 'light' : prev === 'light' ? 'dark' : 'system'
+    );
+  };
+
   const extraPanelsCount =
     project.foldFormat === 'j-plus-2' ? 2 : project.foldFormat === 'j-plus-1' ? 1 : 0;
   const totalUnfoldedWidthMm =
@@ -164,28 +209,28 @@ export function App() {
     extraPanelsCount * PHYSICAL_SPECS.EXTRA_PANEL_WIDTH_MM;
 
   return (
-    <div className="min-h-screen h-screen flex flex-col bg-zinc-950 text-zinc-100 overflow-hidden">
+    <div className="min-h-screen h-screen flex flex-col bg-stone-100 dark:bg-zinc-950 text-stone-900 dark:text-zinc-100 overflow-hidden transition-colors">
       {/* MINIMAL EDITORIAL HEADER */}
-      <header className="h-14 px-5 bg-zinc-950 border-b border-zinc-900 flex items-center justify-between gap-4 shrink-0 z-20">
+      <header className="h-14 px-5 bg-stone-50 dark:bg-zinc-950 border-b border-stone-200 dark:border-zinc-900 flex items-center justify-between gap-4 shrink-0 z-30 transition-colors">
         <div className="flex items-center gap-2.5">
           <Disc className="w-4 h-4 text-amber-500" />
-          <span className="text-xs font-bold tracking-widest uppercase text-zinc-200">
+          <span className="text-xs font-bold tracking-widest uppercase text-stone-800 dark:text-zinc-200">
             Norelco Studio
           </span>
-          <span className="text-[11px] font-mono text-zinc-600 hidden sm:inline">
+          <span className="text-[11px] font-mono text-stone-400 dark:text-zinc-600 hidden sm:inline">
             1970–1989 • 1:1 300 DPI
           </span>
         </div>
 
         {/* CENTER VIEW SWITCHER */}
-        <div className="flex items-center gap-1 bg-zinc-900/90 p-1 rounded-lg border border-zinc-800/80">
+        <div className="flex items-center gap-1 bg-stone-200/80 dark:bg-zinc-900/90 p-1 rounded-lg border border-stone-200 dark:border-zinc-800/80">
           <button
             type="button"
             onClick={() => setPreviewMode('flat-print')}
             className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition ${
               previewMode === 'flat-print'
-                ? 'bg-zinc-800 text-zinc-100 shadow-sm'
-                : 'text-zinc-500 hover:text-zinc-300'
+                ? 'bg-white dark:bg-zinc-800 text-stone-900 dark:text-zinc-100 shadow-sm'
+                : 'text-stone-500 dark:text-zinc-500 hover:text-stone-800 dark:hover:text-zinc-300'
             }`}
           >
             <LayoutTemplate className="w-3.5 h-3.5" />
@@ -196,8 +241,8 @@ export function App() {
             onClick={() => setPreviewMode('mockup-3d')}
             className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition ${
               previewMode === 'mockup-3d'
-                ? 'bg-zinc-800 text-zinc-100 shadow-sm'
-                : 'text-zinc-500 hover:text-zinc-300'
+                ? 'bg-white dark:bg-zinc-800 text-stone-900 dark:text-zinc-100 shadow-sm'
+                : 'text-stone-500 dark:text-zinc-500 hover:text-stone-800 dark:hover:text-zinc-300'
             }`}
           >
             <Box className="w-3.5 h-3.5" />
@@ -208,8 +253,8 @@ export function App() {
             onClick={() => setPreviewMode('labels-view')}
             className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition ${
               previewMode === 'labels-view'
-                ? 'bg-zinc-800 text-zinc-100 shadow-sm'
-                : 'text-zinc-500 hover:text-zinc-300'
+                ? 'bg-white dark:bg-zinc-800 text-stone-900 dark:text-zinc-100 shadow-sm'
+                : 'text-stone-500 dark:text-zinc-500 hover:text-stone-800 dark:hover:text-zinc-300'
             }`}
           >
             <Tag className="w-3.5 h-3.5" />
@@ -217,7 +262,7 @@ export function App() {
           </button>
         </div>
 
-        {/* CLEAN EXPORT & PWA INSTALL ACTIONS */}
+        {/* CLEAN EXPORT, THEME & PWA INSTALL ACTIONS */}
         <div className="flex items-center gap-1.5">
           <input
             ref={jsonInputRef}
@@ -227,18 +272,39 @@ export function App() {
             className="hidden"
           />
 
+          {/* Theme Switcher Button: Claro / Oscuro / Sistema */}
+          <button
+            type="button"
+            onClick={cycleThemeMode}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-stone-200/70 dark:bg-zinc-900 hover:bg-stone-300/70 dark:hover:bg-zinc-800 border border-stone-200 dark:border-zinc-800 text-xs font-medium text-stone-700 dark:text-zinc-300 transition"
+            title={`Tema actual: ${
+              themeMode === 'system'
+                ? 'Automático (Sistema)'
+                : themeMode === 'light'
+                ? 'Modo Claro'
+                : 'Modo Oscuro'
+            }. Haz clic para cambiar.`}
+          >
+            {themeMode === 'light' && <Sun className="w-3.5 h-3.5 text-amber-500" />}
+            {themeMode === 'dark' && <Moon className="w-3.5 h-3.5 text-amber-400" />}
+            {themeMode === 'system' && <Monitor className="w-3.5 h-3.5 text-stone-500 dark:text-zinc-400" />}
+            <span className="hidden xl:inline text-[11px]">
+              {themeMode === 'system' ? 'Auto' : themeMode === 'light' ? 'Claro' : 'Oscuro'}
+            </span>
+          </button>
+
           {!isStandaloneApp && (
             <button
               type="button"
               onClick={handleInstallPwaClick}
               className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition ${
                 deferredPwaPrompt
-                  ? 'bg-emerald-500/15 border-emerald-500/50 text-emerald-300 hover:bg-emerald-500/25'
-                  : 'bg-zinc-900 hover:bg-zinc-800 border-zinc-800 text-zinc-300'
+                  ? 'bg-emerald-500/15 border-emerald-500/50 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/25'
+                  : 'bg-stone-200/70 dark:bg-zinc-900 hover:bg-stone-300/70 dark:hover:bg-zinc-800 border-stone-200 dark:border-zinc-800 text-stone-700 dark:text-zinc-300'
               }`}
               title="Instalar como aplicación de escritorio en Chrome"
             >
-              <MonitorDown className="w-3.5 h-3.5 text-emerald-400" />
+              <MonitorDown className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400" />
               <span className="hidden xl:inline">Instalar App</span>
             </button>
           )}
@@ -246,7 +312,7 @@ export function App() {
           <button
             type="button"
             onClick={() => jsonInputRef.current?.click()}
-            className="p-2 rounded-lg text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900 transition"
+            className="p-2 rounded-lg text-stone-500 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-zinc-100 hover:bg-stone-200/60 dark:hover:bg-zinc-900 transition"
             title="Cargar proyecto (.json)"
           >
             <FolderOpen className="w-4 h-4" />
@@ -258,7 +324,7 @@ export function App() {
               exportProjectJson(project);
               triggerToast('Proyecto guardado (.json)');
             }}
-            className="p-2 rounded-lg text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900 transition"
+            className="p-2 rounded-lg text-stone-500 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-zinc-100 hover:bg-stone-200/60 dark:hover:bg-zinc-900 transition"
             title="Guardar proyecto (.json)"
           >
             <Save className="w-4 h-4" />
@@ -268,62 +334,119 @@ export function App() {
             type="button"
             disabled={isExporting !== null}
             onClick={handleExportSquarePng}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-xs font-medium text-zinc-300 transition disabled:opacity-50"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-stone-200/70 dark:bg-zinc-900 hover:bg-stone-300/70 dark:hover:bg-zinc-800 border border-stone-200 dark:border-zinc-800 text-xs font-medium text-stone-700 dark:text-zinc-300 transition disabled:opacity-50"
             title="Exportar imagen cuadrada 2000×2000 px para Spotify"
           >
-            <ImageDown className="w-3.5 h-3.5 text-zinc-400" />
+            <ImageDown className="w-3.5 h-3.5 text-stone-500 dark:text-zinc-400" />
             <span className="hidden md:inline">PNG 1:1</span>
           </button>
 
-          <button
-            type="button"
-            disabled={isExporting !== null}
-            onClick={handleExportPdf}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-zinc-950 text-xs font-semibold transition disabled:opacity-50"
-            title="Exportar hoja A4 lista para imprenta a escala 1:1"
-          >
-            <Printer className="w-3.5 h-3.5" />
-            <span>{isExporting === 'pdf' ? '...' : 'PDF A4'}</span>
-          </button>
+          {/* PDF A4 Split Button with Separate Cartulina / Pegatina Options */}
+          <div className="relative">
+            <button
+              type="button"
+              disabled={isExporting !== null}
+              onClick={() => setShowPdfMenu((v) => !v)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-zinc-950 text-xs font-semibold transition disabled:opacity-50"
+              title="Opciones de impresión A4 a escala 1:1 (J-Card en Cartulina y Etiquetas en Pegatina por separado)"
+            >
+              <Printer className="w-3.5 h-3.5" />
+              <span>{isExporting === 'pdf' ? '...' : 'PDF A4'}</span>
+              <ChevronDown className="w-3.5 h-3.5" />
+            </button>
+
+            {showPdfMenu && (
+              <>
+                <div
+                  className="fixed inset-0 z-40"
+                  onClick={() => setShowPdfMenu(false)}
+                />
+                <div className="absolute right-0 mt-2 w-72 rounded-xl bg-white dark:bg-zinc-900 border border-stone-200 dark:border-zinc-800 shadow-2xl py-1.5 z-50 text-xs">
+                  <div className="px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider text-stone-400 dark:text-zinc-500 border-b border-stone-100 dark:border-zinc-800">
+                    Impresión A4 Escala 1:1 (300 DPI)
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handleExportPdf('jcard-only')}
+                    className="w-full px-3 py-2.5 text-left hover:bg-stone-100 dark:hover:bg-zinc-800/80 transition flex flex-col gap-0.5"
+                  >
+                    <span className="font-semibold text-stone-900 dark:text-zinc-100">
+                      Solo J-Card (Para Cartulina)
+                    </span>
+                    <span className="text-[11px] text-stone-500 dark:text-zinc-400">
+                      1 hoja A4 con el encarte desplegado ({totalUnfoldedWidthMm} × 102 mm)
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleExportPdf('labels-only')}
+                    className="w-full px-3 py-2.5 text-left hover:bg-stone-100 dark:hover:bg-zinc-800/80 transition flex flex-col gap-0.5 border-t border-stone-100 dark:border-zinc-800/60"
+                  >
+                    <span className="font-semibold text-stone-900 dark:text-zinc-100">
+                      Solo Etiquetas A/B (Para Pegatina)
+                    </span>
+                    <span className="text-[11px] text-stone-500 dark:text-zinc-400">
+                      1 hoja A4 adhesiva con juego principal + repuesto (89 × 42 mm)
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleExportPdf('separate-2-pages')}
+                    className="w-full px-3 py-2.5 text-left hover:bg-stone-100 dark:hover:bg-zinc-800/80 transition flex flex-col gap-0.5 border-t border-stone-100 dark:border-zinc-800/60"
+                  >
+                    <span className="font-semibold text-amber-600 dark:text-amber-400">
+                      PDF Completo en 2 Hojas Separadas
+                    </span>
+                    <span className="text-[11px] text-stone-500 dark:text-zinc-400">
+                      Pág. 1: J-Card (Cartulina) + Pág. 2: Etiquetas (Pegatina)
+                    </span>
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </header>
 
       {/* PWA CHROME INSTALL GUIDE MODAL */}
       {showPwaGuideModal && (
         <div
-          className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
           onClick={() => setShowPwaGuideModal(false)}
         >
           <div
-            className="w-full max-w-md rounded-xl bg-zinc-900 border border-zinc-800 p-5 space-y-4 shadow-2xl"
+            className="w-full max-w-md rounded-xl bg-white dark:bg-zinc-900 border border-stone-200 dark:border-zinc-800 p-5 space-y-4 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <MonitorDown className="w-4 h-4 text-amber-400" />
-                <h3 className="text-sm font-bold text-zinc-100">
+                <MonitorDown className="w-4 h-4 text-amber-500" />
+                <h3 className="text-sm font-bold text-stone-900 dark:text-zinc-100">
                   Instalar Norelco Studio en Google Chrome
                 </h3>
               </div>
               <button
                 type="button"
                 onClick={() => setShowPwaGuideModal(false)}
-                className="text-zinc-500 hover:text-zinc-200"
+                className="text-stone-400 hover:text-stone-700 dark:hover:text-zinc-200"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <p className="text-xs text-zinc-400 leading-relaxed">
-              Esta web incluye un manifiesto PWA (<code className="text-zinc-200">manifest.webmanifest</code>) y Service Worker offline para ejecutarse como aplicación nativa desde tu URL de GitHub Pages:
+            <p className="text-xs text-stone-600 dark:text-zinc-400 leading-relaxed">
+              Esta web incluye manifiesto PWA (<code className="text-stone-900 dark:text-zinc-200">manifest.webmanifest</code>) y Service Worker offline para ejecutarse como aplicación de escritorio desde tu URL de GitHub Pages:
             </p>
 
-            <ol className="text-xs text-zinc-300 space-y-2 list-decimal list-inside bg-zinc-950/80 p-3.5 rounded-lg border border-zinc-800/80">
+            <ol className="text-xs text-stone-700 dark:text-zinc-300 space-y-2 list-decimal list-inside bg-stone-100 dark:bg-zinc-950/80 p-3.5 rounded-lg border border-stone-200 dark:border-zinc-800/80">
               <li>
                 Abre la URL de GitHub Pages en <strong>Google Chrome</strong> o <strong>Edge</strong>.
               </li>
               <li>
-                Haz clic en el icono <strong>Instalar Norelco Studio</strong> (pantalla con flecha hacia abajo) situado a la derecha de la barra de direcciones URL.
+                Haz clic en el icono <strong>Instalar Norelco Studio</strong> situado a la derecha de la barra de direcciones URL.
               </li>
               <li>
                 O ve al menú de Chrome (<strong>⋮</strong>) → <strong>Guardar y compartir</strong> → <strong>Instalar página como aplicación...</strong>
@@ -344,24 +467,24 @@ export function App() {
       )}
 
       {statusToast && (
-        <div className="fixed bottom-5 right-5 z-50 flex items-center gap-2 px-3.5 py-2 rounded-lg bg-zinc-900 border border-zinc-700 text-xs text-zinc-200 shadow-xl">
-          <CheckCircle2 className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+        <div className="fixed bottom-5 right-5 z-50 flex items-center gap-2 px-3.5 py-2 rounded-lg bg-white dark:bg-zinc-900 border border-stone-300 dark:border-zinc-700 text-xs text-stone-800 dark:text-zinc-200 shadow-xl">
+          <CheckCircle2 className="w-3.5 h-3.5 text-amber-500 shrink-0" />
           <span>{statusToast}</span>
         </div>
       )}
 
       {/* MAIN WORKSPACE */}
       <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
-        {/* LEFT SIDEBAR: BREATHABLE & MINIMAL */}
-        <aside className="w-full lg:w-[360px] bg-zinc-950 border-r border-zinc-900 flex flex-col shrink-0 overflow-hidden">
-          <div className="grid grid-cols-2 border-b border-zinc-900 text-xs font-medium shrink-0">
+        {/* LEFT SIDEBAR */}
+        <aside className="w-full lg:w-[360px] bg-stone-50 dark:bg-zinc-950 border-r border-stone-200 dark:border-zinc-900 flex flex-col shrink-0 overflow-hidden transition-colors">
+          <div className="grid grid-cols-2 border-b border-stone-200 dark:border-zinc-900 text-xs font-medium shrink-0">
             <button
               type="button"
               onClick={() => setSidebarSection('design')}
               className={`py-3 text-center border-b-2 transition ${
                 sidebarSection === 'design'
-                  ? 'border-amber-500 text-zinc-100'
-                  : 'border-transparent text-zinc-500 hover:text-zinc-300'
+                  ? 'border-amber-500 text-stone-900 dark:text-zinc-100'
+                  : 'border-transparent text-stone-400 dark:text-zinc-500 hover:text-stone-700 dark:hover:text-zinc-300'
               }`}
             >
               Diseño Editorial
@@ -371,8 +494,8 @@ export function App() {
               onClick={() => setSidebarSection('tracks')}
               className={`py-3 text-center border-b-2 transition ${
                 sidebarSection === 'tracks'
-                  ? 'border-amber-500 text-zinc-100'
-                  : 'border-transparent text-zinc-500 hover:text-zinc-300'
+                  ? 'border-amber-500 text-stone-900 dark:text-zinc-100'
+                  : 'border-transparent text-stone-400 dark:text-zinc-500 hover:text-stone-700 dark:hover:text-zinc-300'
               }`}
             >
               Pistas ({project.tracks.length})
@@ -388,12 +511,12 @@ export function App() {
           </div>
         </aside>
 
-        {/* RIGHT PREVIEW CANVAS WITH GENEROUS NEGATIVE SPACE */}
-        <main className="flex-1 flex flex-col bg-[#0c0c0e] overflow-hidden relative">
+        {/* RIGHT PREVIEW CANVAS */}
+        <main className="flex-1 flex flex-col bg-stone-200/60 dark:bg-[#0c0c0e] overflow-hidden relative transition-colors">
           {previewMode === 'flat-print' && (
             <div className="flex-1 overflow-auto flex flex-col items-center justify-center p-10">
               <div
-                className="transition-all duration-150 ease-out drop-shadow-[0_24px_48px_rgba(0,0,0,0.75)]"
+                className="transition-all duration-150 ease-out drop-shadow-[0_20px_40px_rgba(0,0,0,0.22)] dark:drop-shadow-[0_24px_48px_rgba(0,0,0,0.75)]"
                 style={{
                   width: `${Math.round((totalUnfoldedWidthMm + 20) * 4.3 * flatZoom)}px`,
                 }}
@@ -406,25 +529,25 @@ export function App() {
               </div>
 
               {/* Floating Minimal Zoom & Dimension Bar */}
-              <div className="fixed bottom-5 flex items-center gap-3 px-3.5 py-1.5 rounded-full bg-zinc-900/90 border border-zinc-800/90 text-[11px] text-zinc-400 backdrop-blur">
-                <span className="font-mono text-zinc-500">
+              <div className="fixed bottom-5 flex items-center gap-3 px-3.5 py-1.5 rounded-full bg-white/90 dark:bg-zinc-900/90 border border-stone-300 dark:border-zinc-800/90 text-[11px] text-stone-600 dark:text-zinc-400 shadow-lg backdrop-blur">
+                <span className="font-mono text-stone-500 dark:text-zinc-500">
                   {totalUnfoldedWidthMm} × 102 mm
                 </span>
-                <span className="text-zinc-700">|</span>
+                <span className="text-stone-300 dark:text-zinc-700">|</span>
                 <button
                   type="button"
                   onClick={() => setFlatZoom((z) => Math.max(0.6, +(z - 0.15).toFixed(2)))}
-                  className="text-zinc-400 hover:text-zinc-100"
+                  className="text-stone-500 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-zinc-100"
                 >
                   <ZoomOut className="w-3.5 h-3.5" />
                 </button>
-                <span className="font-mono w-10 text-center text-zinc-300">
+                <span className="font-mono w-10 text-center text-stone-800 dark:text-zinc-300">
                   {Math.round(flatZoom * 100)}%
                 </span>
                 <button
                   type="button"
                   onClick={() => setFlatZoom((z) => Math.min(2.0, +(z + 0.15).toFixed(2)))}
-                  className="text-zinc-400 hover:text-zinc-100"
+                  className="text-stone-500 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-zinc-100"
                 >
                   <ZoomIn className="w-3.5 h-3.5" />
                 </button>
@@ -436,7 +559,7 @@ export function App() {
 
           {previewMode === 'labels-view' && (
             <div className="flex-1 overflow-auto flex flex-col items-center justify-center p-10">
-              <div className="w-full max-w-[500px] drop-shadow-[0_24px_48px_rgba(0,0,0,0.75)]">
+              <div className="w-full max-w-[500px] drop-shadow-[0_20px_40px_rgba(0,0,0,0.22)] dark:drop-shadow-[0_24px_48px_rgba(0,0,0,0.75)]">
                 <CassetteLabelsSvgRenderer
                   project={project}
                   showDieCutGuides={!labelsShowMechanics}
@@ -444,13 +567,15 @@ export function App() {
                 />
               </div>
 
-              <div className="fixed bottom-5 flex items-center gap-3 px-3.5 py-1.5 rounded-full bg-zinc-900/90 border border-zinc-800/90 text-[11px] text-zinc-400 backdrop-blur">
-                <span className="font-mono text-zinc-500">89 × 42 mm</span>
-                <span className="text-zinc-700">|</span>
+              <div className="fixed bottom-5 flex items-center gap-3 px-3.5 py-1.5 rounded-full bg-white/90 dark:bg-zinc-900/90 border border-stone-300 dark:border-zinc-800/90 text-[11px] text-stone-600 dark:text-zinc-400 shadow-lg backdrop-blur">
+                <span className="font-mono text-stone-500 dark:text-zinc-500">
+                  89 × 42 mm
+                </span>
+                <span className="text-stone-300 dark:text-zinc-700">|</span>
                 <button
                   type="button"
                   onClick={() => setLabelsShowMechanics((v) => !v)}
-                  className="text-zinc-300 hover:text-amber-400 font-medium transition"
+                  className="text-stone-800 dark:text-zinc-300 hover:text-amber-600 dark:hover:text-amber-400 font-medium transition"
                 >
                   {labelsShowMechanics ? 'Ver troquel limpio' : 'Simular bobinas'}
                 </button>
