@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import {
   CassetteProject,
+  MediaFormat,
   PdfExportMode,
   PHYSICAL_SPECS,
   PreviewMode,
@@ -28,10 +29,14 @@ import {
 import { SPOTIFY_HISTORICAL_PRESETS } from './utils/spotifyConnector';
 import { JCardSvgRenderer } from './components/svg/JCardSvgRenderer';
 import { CassetteLabelsSvgRenderer } from './components/svg/CassetteLabelsSvgRenderer';
+import { CdInsertsSvgRenderer } from './components/svg/CdInsertsSvgRenderer';
+import { CdDiscLabelSvgRenderer } from './components/svg/CdDiscLabelSvgRenderer';
 import { Norelco3DMockup } from './components/preview/Norelco3DMockup';
+import { CdJewelCase3DMockup } from './components/preview/CdJewelCase3DMockup';
 import { EditorialStylePanel } from './components/panels/EditorialStylePanel';
 import { TracklistIngestPanel } from './components/panels/TracklistIngestPanel';
 import {
+  exportCdPrintReadyPdfA4,
   exportPrintReadyPdfA4,
   exportProjectJson,
   exportSquarePlaylistCover2000px,
@@ -49,6 +54,7 @@ export function App() {
   const [previewMode, setPreviewMode] = useState<PreviewMode>('flat-print');
   const [sidebarSection, setSidebarSection] = useState<'design' | 'tracks'>('design');
   const [flatZoom, setFlatZoom] = useState<number>(1.0);
+  const [rotateFlatLandscape, setRotateFlatLandscape] = useState<boolean>(true);
   const [labelsShowMechanics, setLabelsShowMechanics] = useState<boolean>(false);
   const [isExporting, setIsExporting] = useState<string | null>(null);
   const [statusToast, setStatusToast] = useState<string | null>(null);
@@ -69,7 +75,12 @@ export function App() {
 
   const exportJCardSvgRef = useRef<SVGSVGElement>(null);
   const exportLabelsSvgRef = useRef<SVGSVGElement>(null);
+  const exportCdInsertsSvgRef = useRef<SVGSVGElement>(null);
+  const exportCdDiscSvgRef = useRef<SVGSVGElement>(null);
   const jsonInputRef = useRef<HTMLInputElement>(null);
+
+  const activeMediaFormat: MediaFormat = project.mediaFormat || 'cassette';
+  const isCdMode = activeMediaFormat === 'cd';
 
   // Apply Light / Dark / System Theme
   useEffect(() => {
@@ -134,22 +145,39 @@ export function App() {
 
   const handleExportPdf = async (mode: PdfExportMode) => {
     setShowPdfMenu(false);
-    if (!exportJCardSvgRef.current || !exportLabelsSvgRef.current) return;
     setIsExporting('pdf');
     try {
-      await exportPrintReadyPdfA4(
-        project,
-        exportJCardSvgRef.current,
-        exportLabelsSvgRef.current,
-        mode
-      );
-      const label =
-        mode === 'jcard-only'
-          ? 'PDF A4 Solo J-Card (Cartulina) exportado.'
-          : mode === 'labels-only'
-          ? 'PDF A4 Solo Etiquetas (Pegatina) exportado.'
-          : 'PDF A4 en 2 hojas separadas (Cartulina + Pegatina) exportado.';
-      triggerToast(label);
+      if (isCdMode) {
+        if (!exportCdInsertsSvgRef.current || !exportCdDiscSvgRef.current) return;
+        await exportCdPrintReadyPdfA4(
+          project,
+          exportCdInsertsSvgRef.current,
+          exportCdDiscSvgRef.current,
+          mode
+        );
+        const cdLabel =
+          mode === 'jcard-only'
+            ? 'PDF A4 Solo Carátula + Inlay CD (Cartulina) exportado.'
+            : mode === 'labels-only'
+            ? 'PDF A4 Solo Galleta CD (Pegatina) exportado.'
+            : 'PDF A4 CD en 2 hojas separadas (Cartulina + Pegatina CD) exportado.';
+        triggerToast(cdLabel);
+      } else {
+        if (!exportJCardSvgRef.current || !exportLabelsSvgRef.current) return;
+        await exportPrintReadyPdfA4(
+          project,
+          exportJCardSvgRef.current,
+          exportLabelsSvgRef.current,
+          mode
+        );
+        const label =
+          mode === 'jcard-only'
+            ? 'PDF A4 Solo J-Card (Cartulina) exportado.'
+            : mode === 'labels-only'
+            ? 'PDF A4 Solo Etiquetas (Pegatina) exportado.'
+            : 'PDF A4 en 2 hojas separadas (Cartulina + Pegatina) exportado.';
+        triggerToast(label);
+      }
     } catch (err) {
       console.error(err);
       triggerToast('Error al generar el PDF.');
@@ -212,14 +240,43 @@ export function App() {
     <div className="min-h-screen h-screen flex flex-col bg-stone-100 dark:bg-zinc-950 text-stone-900 dark:text-zinc-100 overflow-hidden transition-colors">
       {/* MINIMAL EDITORIAL HEADER */}
       <header className="h-14 px-5 bg-stone-50 dark:bg-zinc-950 border-b border-stone-200 dark:border-zinc-900 flex items-center justify-between gap-4 shrink-0 z-30 transition-colors">
-        <div className="flex items-center gap-2.5">
-          <Disc className="w-4 h-4 text-amber-500" />
-          <span className="text-xs font-bold tracking-widest uppercase text-stone-800 dark:text-zinc-200">
-            Norelco Studio
-          </span>
-          <span className="text-[11px] font-mono text-stone-400 dark:text-zinc-600 hidden sm:inline">
-            1970–1989 • 1:1 300 DPI
-          </span>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <Disc className="w-4 h-4 text-amber-500" />
+            <span className="text-xs font-bold tracking-widest uppercase text-stone-800 dark:text-zinc-200">
+              Norelco Studio
+            </span>
+          </div>
+
+          {/* FORMAT SWITCHER: CASSETTE vs CD */}
+          <div className="flex items-center gap-0.5 bg-stone-200/80 dark:bg-zinc-900 p-0.5 rounded-lg border border-stone-200 dark:border-zinc-800">
+            <button
+              type="button"
+              onClick={() =>
+                setProject((prev) => ({ ...prev, mediaFormat: 'cassette' }))
+              }
+              className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition ${
+                !isCdMode
+                  ? 'bg-amber-500 text-zinc-950 shadow-sm'
+                  : 'text-stone-600 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-zinc-200'
+              }`}
+            >
+              Cassette
+            </button>
+            <button
+              type="button"
+              onClick={() =>
+                setProject((prev) => ({ ...prev, mediaFormat: 'cd' }))
+              }
+              className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition ${
+                isCdMode
+                  ? 'bg-amber-500 text-zinc-950 shadow-sm'
+                  : 'text-stone-600 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-zinc-200'
+              }`}
+            >
+              CD
+            </button>
+          </div>
         </div>
 
         {/* CENTER VIEW SWITCHER */}
@@ -234,7 +291,7 @@ export function App() {
             }`}
           >
             <LayoutTemplate className="w-3.5 h-3.5" />
-            Pliego J-Card
+            {isCdMode ? 'Carátula + Inlay CD' : 'Pliego J-Card'}
           </button>
           <button
             type="button"
@@ -246,7 +303,7 @@ export function App() {
             }`}
           >
             <Box className="w-3.5 h-3.5" />
-            Caja 3D
+            {isCdMode ? 'Jewel Case 3D' : 'Caja 3D'}
           </button>
           <button
             type="button"
@@ -258,7 +315,7 @@ export function App() {
             }`}
           >
             <Tag className="w-3.5 h-3.5" />
-            Etiquetas A/B
+            {isCdMode ? 'Galleta CD' : 'Etiquetas A/B'}
           </button>
         </div>
 
@@ -372,10 +429,14 @@ export function App() {
                     className="w-full px-3 py-2.5 text-left hover:bg-stone-100 dark:hover:bg-zinc-800/80 transition flex flex-col gap-0.5"
                   >
                     <span className="font-semibold text-stone-900 dark:text-zinc-100">
-                      Solo J-Card (Para Cartulina)
+                      {isCdMode
+                        ? 'Solo Carátula + Inlay CD (Para Cartulina)'
+                        : 'Solo J-Card (Para Cartulina)'}
                     </span>
                     <span className="text-[11px] text-stone-500 dark:text-zinc-400">
-                      1 hoja A4 con el encarte desplegado ({totalUnfoldedWidthMm} × 102 mm)
+                      {isCdMode
+                        ? '1 hoja A4 con Frontal (120×120 mm) + Inlay Trasero (150×118 mm)'
+                        : `1 hoja A4 con el encarte desplegado (${totalUnfoldedWidthMm} × 102 mm)`}
                     </span>
                   </button>
 
@@ -385,10 +446,14 @@ export function App() {
                     className="w-full px-3 py-2.5 text-left hover:bg-stone-100 dark:hover:bg-zinc-800/80 transition flex flex-col gap-0.5 border-t border-stone-100 dark:border-zinc-800/60"
                   >
                     <span className="font-semibold text-stone-900 dark:text-zinc-100">
-                      Solo Etiquetas A/B (Para Pegatina)
+                      {isCdMode
+                        ? 'Solo Galleta Circular CD (Para Pegatina)'
+                        : 'Solo Etiquetas A/B (Para Pegatina)'}
                     </span>
                     <span className="text-[11px] text-stone-500 dark:text-zinc-400">
-                      1 hoja A4 adhesiva con juego principal + repuesto (89 × 42 mm)
+                      {isCdMode
+                        ? '1 hoja A4 adhesiva con 2 etiquetas circulares (Ø 116 mm)'
+                        : '1 hoja A4 adhesiva con juego principal + repuesto (89 × 42 mm)'}
                     </span>
                   </button>
 
@@ -401,7 +466,9 @@ export function App() {
                       PDF Completo en 2 Hojas Separadas
                     </span>
                     <span className="text-[11px] text-stone-500 dark:text-zinc-400">
-                      Pág. 1: J-Card (Cartulina) + Pág. 2: Etiquetas (Pegatina)
+                      {isCdMode
+                        ? 'Pág. 1: Carátula/Inlay (Cartulina) + Pág. 2: Galleta CD (Pegatina)'
+                        : 'Pág. 1: J-Card (Cartulina) + Pág. 2: Etiquetas (Pegatina)'}
                     </span>
                   </button>
                 </div>
@@ -515,24 +582,58 @@ export function App() {
         <main className="flex-1 flex flex-col bg-stone-200/60 dark:bg-[#0c0c0e] overflow-hidden relative transition-colors">
           {previewMode === 'flat-print' && (
             <div className="flex-1 overflow-auto flex flex-col items-center justify-center p-10">
-              <div
-                className="transition-all duration-150 ease-out drop-shadow-[0_20px_40px_rgba(0,0,0,0.22)] dark:drop-shadow-[0_24px_48px_rgba(0,0,0,0.75)]"
-                style={{
-                  width: `${Math.round((totalUnfoldedWidthMm + 20) * 4.3 * flatZoom)}px`,
-                }}
-              >
-                <JCardSvgRenderer
-                  project={project}
-                  includePrintGuides={true}
-                  idPrefix="preview-flat"
-                />
-              </div>
+              {isCdMode ? (
+                <div
+                  className="transition-all duration-200 ease-out drop-shadow-[0_20px_40px_rgba(0,0,0,0.22)] dark:drop-shadow-[0_24px_48px_rgba(0,0,0,0.75)]"
+                  style={{
+                    width: `${Math.round(920 * flatZoom)}px`,
+                  }}
+                >
+                  <CdInsertsSvgRenderer
+                    project={project}
+                    part="both"
+                    includePrintGuides={true}
+                    idPrefix="preview-cd-flat"
+                  />
+                </div>
+              ) : (
+                <div
+                  className="transition-all duration-200 ease-out drop-shadow-[0_20px_40px_rgba(0,0,0,0.22)] dark:drop-shadow-[0_24px_48px_rgba(0,0,0,0.75)]"
+                  style={{
+                    width: `${Math.round((totalUnfoldedWidthMm + 20) * 4.3 * flatZoom)}px`,
+                    transform:
+                      project.templateId === 'tdk-d-index' && rotateFlatLandscape
+                        ? 'rotate(-90deg)'
+                        : 'none',
+                  }}
+                >
+                  <JCardSvgRenderer
+                    project={project}
+                    includePrintGuides={true}
+                    idPrefix="preview-flat"
+                  />
+                </div>
+              )}
 
               {/* Floating Minimal Zoom & Dimension Bar */}
               <div className="fixed bottom-5 flex items-center gap-3 px-3.5 py-1.5 rounded-full bg-white/90 dark:bg-zinc-900/90 border border-stone-300 dark:border-zinc-800/90 text-[11px] text-stone-600 dark:text-zinc-400 shadow-lg backdrop-blur">
                 <span className="font-mono text-stone-500 dark:text-zinc-500">
-                  {totalUnfoldedWidthMm} × 102 mm
+                  {isCdMode
+                    ? 'Frontal 120×120 mm + Inlay 150×118 mm'
+                    : `${totalUnfoldedWidthMm} × 102 mm`}
                 </span>
+                {!isCdMode && project.templateId === 'tdk-d-index' && (
+                  <>
+                    <span className="text-stone-300 dark:text-zinc-700">|</span>
+                    <button
+                      type="button"
+                      onClick={() => setRotateFlatLandscape((r) => !r)}
+                      className="text-amber-600 dark:text-amber-400 hover:text-amber-500 font-medium transition"
+                    >
+                      {rotateFlatLandscape ? 'Vista Horizontal (TDK)' : 'Vista Vertical'}
+                    </button>
+                  </>
+                )}
                 <span className="text-stone-300 dark:text-zinc-700">|</span>
                 <button
                   type="button"
@@ -555,21 +656,39 @@ export function App() {
             </div>
           )}
 
-          {previewMode === 'mockup-3d' && <Norelco3DMockup project={project} />}
+          {previewMode === 'mockup-3d' &&
+            (isCdMode ? (
+              <CdJewelCase3DMockup project={project} />
+            ) : (
+              <Norelco3DMockup project={project} />
+            ))}
 
           {previewMode === 'labels-view' && (
             <div className="flex-1 overflow-auto flex flex-col items-center justify-center p-10">
-              <div className="w-full max-w-[500px] drop-shadow-[0_20px_40px_rgba(0,0,0,0.22)] dark:drop-shadow-[0_24px_48px_rgba(0,0,0,0.75)]">
-                <CassetteLabelsSvgRenderer
-                  project={project}
-                  showDieCutGuides={!labelsShowMechanics}
-                  showCassetteMechanics={labelsShowMechanics}
-                />
+              <div
+                className={`${
+                  isCdMode ? 'w-full max-w-[440px]' : 'w-full max-w-[500px]'
+                } drop-shadow-[0_20px_40px_rgba(0,0,0,0.22)] dark:drop-shadow-[0_24px_48px_rgba(0,0,0,0.75)]`}
+              >
+                {isCdMode ? (
+                  <CdDiscLabelSvgRenderer
+                    project={project}
+                    showDieCutGuides={!labelsShowMechanics}
+                    showDiscMechanics={labelsShowMechanics}
+                    idPrefix="preview-cd-disc"
+                  />
+                ) : (
+                  <CassetteLabelsSvgRenderer
+                    project={project}
+                    showDieCutGuides={!labelsShowMechanics}
+                    showCassetteMechanics={labelsShowMechanics}
+                  />
+                )}
               </div>
 
               <div className="fixed bottom-5 flex items-center gap-3 px-3.5 py-1.5 rounded-full bg-white/90 dark:bg-zinc-900/90 border border-stone-300 dark:border-zinc-800/90 text-[11px] text-stone-600 dark:text-zinc-400 shadow-lg backdrop-blur">
                 <span className="font-mono text-stone-500 dark:text-zinc-500">
-                  89 × 42 mm
+                  {isCdMode ? 'Ø 116 mm (Hub Ø 41 mm)' : '89 × 42 mm'}
                 </span>
                 <span className="text-stone-300 dark:text-zinc-700">|</span>
                 <button
@@ -577,7 +696,11 @@ export function App() {
                   onClick={() => setLabelsShowMechanics((v) => !v)}
                   className="text-stone-800 dark:text-zinc-300 hover:text-amber-600 dark:hover:text-amber-400 font-medium transition"
                 >
-                  {labelsShowMechanics ? 'Ver troquel limpio' : 'Simular bobinas'}
+                  {labelsShowMechanics
+                    ? 'Ver troquel limpio'
+                    : isCdMode
+                    ? 'Simular reflejo policarbonato'
+                    : 'Simular bobinas'}
                 </button>
               </div>
             </div>
@@ -599,6 +722,20 @@ export function App() {
               project={project}
               showDieCutGuides={false}
               showCassetteMechanics={false}
+            />
+            <CdInsertsSvgRenderer
+              svgRef={exportCdInsertsSvgRef}
+              project={project}
+              part="both"
+              includePrintGuides={false}
+              idPrefix="export-clean-cd-inserts"
+            />
+            <CdDiscLabelSvgRenderer
+              svgRef={exportCdDiscSvgRef}
+              project={project}
+              showDieCutGuides={false}
+              showDiscMechanics={false}
+              idPrefix="export-clean-cd-disc"
             />
           </div>
         </main>

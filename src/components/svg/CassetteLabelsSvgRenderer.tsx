@@ -7,7 +7,7 @@ import {
 } from '../../types/cassette';
 import { formatDuration } from '../../utils/timeAndBalance';
 import { getFontFamilyForPreset } from './JCardSvgRenderer';
-import { DolbyVectorLogo } from './TechnicalLogos';
+import { DolbyVectorLogo, TdkLogoVector } from './TechnicalLogos';
 
 interface SingleCassetteLabelProps {
   project: CassetteProject;
@@ -39,7 +39,13 @@ export const SingleCassetteLabelSvg: React.FC<SingleCassetteLabelProps> = ({
   const rightReelX = W / 2 + reelSpacing / 2;
   const reelY = winY + winH / 2;
 
-  const paper = PAPER_STOCKS[project.paperStock] || PAPER_STOCKS['editorial-cream'];
+  const basePaper = PAPER_STOCKS[project.paperStock] || PAPER_STOCKS['editorial-cream'];
+  const paper = {
+    ...basePaper,
+    bgHex: project.customBgColor || basePaper.bgHex,
+    textHex: project.customTextColor || basePaper.textHex,
+    subTextHex: project.customTextColor ? project.customTextColor : basePaper.subTextHex,
+  };
   const fontFamily = getFontFamilyForPreset(project.typography);
 
   const sideTracks: Track[] = project.tracks.filter((t) => t.side === side);
@@ -62,6 +68,8 @@ export const SingleCassetteLabelSvg: React.FC<SingleCassetteLabelProps> = ({
 
   const clipId = `label-clip-${side}-${Math.round(x)}-${Math.round(y)}`;
   const isDG = project.templateId === 'deutsche-grammophon';
+  const isTDK = project.templateId === 'tdk-d-index';
+  const isHandwritten = project.typography === 'handwritten-pen';
 
   return (
     <g transform={`translate(${x}, ${y})`}>
@@ -74,79 +82,156 @@ export const SingleCassetteLabelSvg: React.FC<SingleCassetteLabelProps> = ({
       <g clipPath={`url(#${clipId})`}>
         <rect x={0} y={0} width={W} height={H} fill={paper.bgHex} />
 
-        {/* Clean Accent Header Band */}
-        <rect x={0} y={0} width={W} height={3.2} fill={project.accentColor} />
+        {isTDK ? (
+          <>
+            {/* Franja superior TDK D con pestaña trapezoidal negra e ícono ❖ TDK */}
+            <polygon points={`0,0 24,0 20.5,11.5 0,11.5`} fill={project.accentColor} />
+            <TdkLogoVector x={3.2} y={2.4} width={15.2} height={3.5} color="#FFFFFF" />
+            <text
+              x={10.5}
+              y={10.1}
+              textAnchor="middle"
+              fill="#D5D4CE"
+              fontFamily="Inter, Helvetica, Arial, sans-serif"
+              fontStyle="italic"
+              fontWeight="900"
+              fontSize="3.8"
+            >
+              D
+            </text>
 
-        {/* Top Header Content: Album Title, Artist & Catalog */}
-        <text
-          x={15}
-          y={7.6}
-          fill={paper.textHex}
-          fontFamily={fontFamily}
-          fontWeight="800"
-          fontSize="2.7"
-          letterSpacing="0.16"
-        >
-          {truncate(project.albumTitle.toUpperCase(), 34)}
-        </text>
-        <text
-          x={15}
-          y={10.8}
-          fill={paper.subTextHex}
-          fontFamily={fontFamily}
-          fontWeight="600"
-          fontSize="1.95"
-          letterSpacing="0.12"
-        >
-          {truncate(project.albumArtist.toUpperCase(), 40)}
-        </text>
+            {/* Renglones pautados superiores para el título de la cinta */}
+            <line x1={23.5} y1={6.2} x2={W - 4} y2={6.2} stroke="#52525B" strokeWidth="0.2" strokeDasharray="0.5 0.7" />
+            <line x1={20.5} y1={11.5} x2={W} y2={11.5} stroke="#18181B" strokeWidth="0.35" />
 
-        <text
-          x={W - 4}
-          y={7.6}
-          textAnchor="end"
-          fill={isDG ? '#18181B' : project.accentColor}
-          fontFamily="JetBrains Mono, monospace"
-          fontWeight="700"
-          fontSize="1.9"
-        >
-          {project.catalogNumber}
-        </text>
-        <text
-          x={W - 4}
-          y={10.8}
-          textAnchor="end"
-          fill={paper.subTextHex}
-          fontFamily="Inter, Helvetica, sans-serif"
-          fontWeight="600"
-          fontSize="1.55"
-        >
-          {project.recordLabel.toUpperCase()}
-        </text>
+            <text
+              x={25}
+              y={5.4}
+              fill={paper.textHex}
+              fontFamily={fontFamily}
+              fontWeight="700"
+              fontSize={isHandwritten ? '4.0' : '2.8'}
+            >
+              {truncate(project.albumTitle, 34)}
+            </text>
+            <text
+              x={25}
+              y={10.3}
+              fill={paper.subTextHex}
+              fontFamily={fontFamily}
+              fontWeight="600"
+              fontSize={isHandwritten ? '2.9' : '1.95'}
+            >
+              {truncate(project.albumArtist, 40)}
+            </text>
+          </>
+        ) : (
+          <>
+            {/* Clean Accent Header Band */}
+            <rect x={0} y={0} width={W} height={3.2} fill={project.accentColor} />
+
+            {/* Top Header Content: Album Title, Artist & Catalog */}
+            <text
+              x={15}
+              y={7.6}
+              fill={paper.textHex}
+              fontFamily={fontFamily}
+              fontWeight="800"
+              fontSize="2.7"
+              letterSpacing="0.16"
+            >
+              {truncate(project.albumTitle.toUpperCase(), 34)}
+            </text>
+            <text
+              x={15}
+              y={10.8}
+              fill={paper.subTextHex}
+              fontFamily={fontFamily}
+              fontWeight="600"
+              fontSize="1.95"
+              letterSpacing="0.12"
+            >
+              {truncate(project.albumArtist.toUpperCase(), 40)}
+            </text>
+
+            <text
+              x={W - 4}
+              y={7.6}
+              textAnchor="end"
+              fill={isDG ? '#18181B' : project.accentColor}
+              fontFamily="JetBrains Mono, monospace"
+              fontWeight="700"
+              fontSize="1.9"
+            >
+              {project.catalogNumber}
+            </text>
+            <text
+              x={W - 4}
+              y={10.8}
+              textAnchor="end"
+              fill={paper.subTextHex}
+              fontFamily="Inter, Helvetica, sans-serif"
+              fontWeight="600"
+              fontSize="1.55"
+            >
+              {project.recordLabel.toUpperCase()}
+            </text>
+          </>
+        )}
 
         {/* Large Minimalist Side Indicator ("A" / "B") on Left Wing */}
-        <text
-          x={7.5}
-          y={22.8}
-          textAnchor="middle"
-          fill={project.accentColor}
-          fontFamily="Inter, Helvetica, Arial, sans-serif"
-          fontWeight="900"
-          fontSize="8.5"
-        >
-          {side}
-        </text>
-        <text
-          x={7.5}
-          y={26.5}
-          textAnchor="middle"
-          fill={paper.subTextHex}
-          fontFamily="JetBrains Mono, monospace"
-          fontWeight="600"
-          fontSize="1.65"
-        >
-          {formatDuration(sideTotalSec)}
-        </text>
+        {isTDK ? (
+          <g>
+            <rect x={3.3} y={15.2} width={8.4} height={8.4} fill={project.accentColor} />
+            <text
+              x={7.5}
+              y={21.6}
+              textAnchor="middle"
+              fill="#FFFFFF"
+              fontFamily="Inter, Helvetica, Arial, sans-serif"
+              fontWeight="900"
+              fontSize="6.6"
+            >
+              {side}
+            </text>
+            <text
+              x={7.5}
+              y={26.8}
+              textAnchor="middle"
+              fill={paper.subTextHex}
+              fontFamily="JetBrains Mono, monospace"
+              fontWeight="600"
+              fontSize="1.65"
+            >
+              {formatDuration(sideTotalSec)}
+            </text>
+          </g>
+        ) : (
+          <>
+            <text
+              x={7.5}
+              y={22.8}
+              textAnchor="middle"
+              fill={project.accentColor}
+              fontFamily="Inter, Helvetica, Arial, sans-serif"
+              fontWeight="900"
+              fontSize="8.5"
+            >
+              {side}
+            </text>
+            <text
+              x={7.5}
+              y={26.5}
+              textAnchor="middle"
+              fill={paper.subTextHex}
+              fontFamily="JetBrains Mono, monospace"
+              fontWeight="600"
+              fontSize="1.65"
+            >
+              {formatDuration(sideTotalSec)}
+            </text>
+          </>
+        )}
 
         {/* Right Wing: Technical Spec (Dolby B-NR / 120µs) */}
         <g transform="translate(75.5, 16.5)">

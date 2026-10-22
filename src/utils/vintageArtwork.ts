@@ -8,6 +8,24 @@ export function getPresetCoverSvgDataUrl(preset: TemplateId | 'synthwave' | 'dar
   let svg = '';
 
   switch (preset) {
+    case 'full-bleed-art':
+      // Full-bleed warm 70s Autumn illustration (inspired by Autumn Tape II / #FCD8B7)
+      svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" width="1000" height="1000">
+        <defs>
+          <linearGradient id="autumnSky" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#FCD8B7"/>
+            <stop offset="55%" stop-color="#F4A261"/>
+            <stop offset="100%" stop-color="#E76F51"/>
+          </linearGradient>
+        </defs>
+        <rect width="1000" height="1000" fill="url(#autumnSky)"/>
+        <circle cx="500" cy="430" r="240" fill="#FFF3E0" opacity="0.88"/>
+        <path d="M 0 680 Q 260 580 540 660 T 1000 620 L 1000 1000 L 0 1000 Z" fill="#9B2226" opacity="0.85"/>
+        <path d="M 0 760 Q 340 690 660 760 T 1000 730 L 1000 1000 L 0 1000 Z" fill="#3D1E1E"/>
+        <line x1="0" y1="840" x2="1000" y2="840" stroke="#FCD8B7" stroke-width="4" opacity="0.4"/>
+      </svg>`;
+      break;
+
     case 'cbs-epic':
       svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" width="1000" height="1000">
         <rect width="1000" height="1000" fill="#18181A"/>
@@ -93,6 +111,18 @@ export function getPresetCoverSvgDataUrl(preset: TemplateId | 'synthwave' | 'dar
       </svg>`;
       break;
 
+    case 'tdk-d-index':
+      svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" width="1000" height="1000">
+        <rect width="1000" height="1000" fill="#F9F8F4"/>
+        <rect x="0" y="0" width="1000" height="180" fill="#D5D4CE"/>
+        <polygon points="0,0 420,0 360,180 0,180" fill="#18181B"/>
+        <line x1="0" y1="180" x2="1000" y2="180" stroke="#18181B" stroke-width="8"/>
+        <line x1="80" y1="360" x2="920" y2="360" stroke="#52525B" stroke-width="4" stroke-dasharray="12 16"/>
+        <line x1="80" y1="540" x2="920" y2="540" stroke="#52525B" stroke-width="4" stroke-dasharray="12 16"/>
+        <line x1="80" y1="720" x2="920" y2="720" stroke="#52525B" stroke-width="4" stroke-dasharray="12 16"/>
+      </svg>`;
+      break;
+
     case 'mixtape-tdk-maxell':
     default:
       svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" width="1000" height="1000">
@@ -143,4 +173,83 @@ export async function ensureDataUrl(url: string): Promise<string> {
       }
     }
   }
+}
+
+/**
+ * Extracts a harmonious background color, dark accent color, and readable ink color
+ * from any cover image URL / Data URL (inspired by vhs.texs.org palette extraction).
+ */
+export async function extractPaletteFromCoverImage(imageUrl: string): Promise<{
+  bgHex: string;
+  accentHex: string;
+  textHex: string;
+}> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        const size = 32;
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) throw new Error('No 2d ctx');
+        ctx.drawImage(img, 0, 0, size, size);
+        const data = ctx.getImageData(0, 0, size, size).data;
+
+        let rSum = 0;
+        let gSum = 0;
+        let bSum = 0;
+        let count = 0;
+        let darkR = 24;
+        let darkG = 24;
+        let darkB = 27;
+        let maxSat = -1;
+
+        for (let i = 0; i < data.length; i += 4) {
+          const r = data[i];
+          const g = data[i + 1];
+          const b = data[i + 2];
+          rSum += r;
+          gSum += g;
+          bSum += b;
+          count++;
+
+          const max = Math.max(r, g, b);
+          const min = Math.min(r, g, b);
+          const sat = max === 0 ? 0 : (max - min) / max;
+          if (sat > maxSat && max > 40 && max < 230) {
+            maxSat = sat;
+            darkR = r;
+            darkG = g;
+            darkB = b;
+          }
+        }
+
+        const avgR = Math.round(rSum / count);
+        const avgG = Math.round(gSum / count);
+        const avgB = Math.round(bSum / count);
+
+        // Soften towards warm paper tint (like #FCD8B7) if bright, or keep rich tone
+        const blendR = Math.round(avgR * 0.65 + 252 * 0.35);
+        const blendG = Math.round(avgG * 0.65 + 216 * 0.35);
+        const blendB = Math.round(avgB * 0.65 + 183 * 0.35);
+
+        const toHex = (n: number) => Math.max(0, Math.min(255, n)).toString(16).padStart(2, '0');
+        const bgHex = `#${toHex(blendR)}${toHex(blendG)}${toHex(blendB)}`.toUpperCase();
+        const accentHex = `#${toHex(darkR)}${toHex(darkG)}${toHex(darkB)}`.toUpperCase();
+        const lum = 0.299 * blendR + 0.587 * blendG + 0.114 * blendB;
+        const textHex = lum > 135 ? '#000000' : '#FAF7F0';
+
+        resolve({ bgHex, accentHex, textHex });
+      } catch {
+        resolve({ bgHex: '#FCD8B7', accentHex: '#18181B', textHex: '#000000' });
+      }
+    };
+    img.onerror = () => {
+      resolve({ bgHex: '#FCD8B7', accentHex: '#18181B', textHex: '#000000' });
+    };
+    img.src = imageUrl;
+  });
 }

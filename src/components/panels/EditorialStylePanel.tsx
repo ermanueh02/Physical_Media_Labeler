@@ -5,9 +5,13 @@ import {
   Upload,
   ChevronDown,
   ChevronUp,
+  Sparkles,
+  QrCode,
+  Barcode,
 } from 'lucide-react';
 import {
   CassetteProject,
+  CompanyLogoId,
   CoverFilter,
   FoldFormat,
   HISTORICAL_TEMPLATES,
@@ -16,7 +20,10 @@ import {
   TemplateMetadata,
   TypographyPreset,
 } from '../../types/cassette';
-import { getPresetCoverSvgDataUrl } from '../../utils/vintageArtwork';
+import {
+  extractPaletteFromCoverImage,
+  getPresetCoverSvgDataUrl,
+} from '../../utils/vintageArtwork';
 
 interface EditorialStylePanelProps {
   project: CassetteProject;
@@ -44,7 +51,10 @@ export const EditorialStylePanel: React.FC<EditorialStylePanelProps> = ({
     onChangeProject((prev) => ({
       ...prev,
       templateId: tpl.id,
+      fullBleedFront: tpl.id === 'full-bleed-art',
       paperStock: tpl.defaultPaper,
+      customBgColor: tpl.id === 'full-bleed-art' ? '#FCD8B7' : undefined,
+      customTextColor: undefined,
       accentColor: tpl.defaultAccent,
       secondaryColor: tpl.defaultSecondary,
       typography: tpl.defaultTypography,
@@ -54,6 +64,16 @@ export const EditorialStylePanel: React.FC<EditorialStylePanelProps> = ({
       coverUrl: prev.coverUrl.startsWith('data:image/svg+xml')
         ? getPresetCoverSvgDataUrl(tpl.id)
         : prev.coverUrl,
+    }));
+  };
+
+  const handleExtractPalette = async () => {
+    const palette = await extractPaletteFromCoverImage(project.coverUrl);
+    onChangeProject((prev) => ({
+      ...prev,
+      customBgColor: palette.bgHex,
+      customTextColor: palette.textHex,
+      accentColor: palette.accentHex,
     }));
   };
 
@@ -190,18 +210,23 @@ export const EditorialStylePanel: React.FC<EditorialStylePanelProps> = ({
         <div className="flex items-center justify-between gap-4 pt-1">
           <div className="space-y-1.5">
             <span className="text-[11px] text-stone-500 dark:text-zinc-400 block">
-              Papel
+              Papel / Fondo
             </span>
             <div className="flex items-center gap-1.5">
               {(Object.keys(PAPER_STOCKS) as PaperStockId[]).map((stockId) => {
                 const stock = PAPER_STOCKS[stockId];
-                const active = project.paperStock === stockId;
+                const active = !project.customBgColor && project.paperStock === stockId;
                 return (
                   <button
                     key={stockId}
                     type="button"
                     onClick={() =>
-                      onChangeProject((prev) => ({ ...prev, paperStock: stockId }))
+                      onChangeProject((prev) => ({
+                        ...prev,
+                        paperStock: stockId,
+                        customBgColor: undefined,
+                        customTextColor: undefined,
+                      }))
                     }
                     title={stock.name}
                     className={`w-6 h-6 rounded-full border transition ${
@@ -213,6 +238,16 @@ export const EditorialStylePanel: React.FC<EditorialStylePanelProps> = ({
                   />
                 );
               })}
+              {/* Selector de Color de Fondo Libre (ej. #FCD8B7 estilo vhs.texs.org) */}
+              <input
+                type="color"
+                value={project.customBgColor || PAPER_STOCKS[project.paperStock]?.bgHex || '#FCD8B7'}
+                onChange={(e) =>
+                  onChangeProject((prev) => ({ ...prev, customBgColor: e.target.value }))
+                }
+                className="w-6 h-6 rounded-full bg-transparent cursor-pointer border-0"
+                title="Color de fondo personalizado (ej. #FCD8B7)"
+              />
             </div>
           </div>
 
@@ -244,9 +279,39 @@ export const EditorialStylePanel: React.FC<EditorialStylePanelProps> = ({
                   onChangeProject((prev) => ({ ...prev, accentColor: e.target.value }))
                 }
                 className="w-5 h-5 rounded-full bg-transparent cursor-pointer border-0"
-                title="Color personalizado"
+                title="Color de acento personalizado"
               />
             </div>
+          </div>
+        </div>
+
+        {/* Botón para extraer paleta automática de la portada + selector de color de texto */}
+        <div className="flex items-center justify-between gap-2 pt-1">
+          <button
+            type="button"
+            onClick={handleExtractPalette}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-700 dark:text-amber-300 text-[11px] font-medium transition"
+            title="Extraer automáticamente el color de fondo y tinta desde la imagen de portada"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            Extraer color de portada
+          </button>
+
+          <div className="flex items-center gap-1.5 text-[11px] text-stone-500 dark:text-zinc-400">
+            <span>Texto:</span>
+            <input
+              type="color"
+              value={
+                project.customTextColor ||
+                PAPER_STOCKS[project.paperStock]?.textHex ||
+                '#000000'
+              }
+              onChange={(e) =>
+                onChangeProject((prev) => ({ ...prev, customTextColor: e.target.value }))
+              }
+              className="w-5 h-5 rounded bg-transparent cursor-pointer border-0"
+              title="Color de texto personalizado"
+            />
           </div>
         </div>
 
@@ -261,6 +326,7 @@ export const EditorialStylePanel: React.FC<EditorialStylePanelProps> = ({
             }
             className="w-full bg-white dark:bg-zinc-900/70 border border-stone-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-xs text-stone-700 dark:text-zinc-300 focus:outline-none focus:border-amber-500"
           >
+            <option value="handwritten-pen">Tipografía: Rotulador / Bolígrafo Manual (TDK Mixtape)</option>
             <option value="helvetica-univers">Tipografía: Helvética / Univers (Suiza 70s–80s)</option>
             <option value="garamond-serif">Tipografía: Garamond Serif (Editorial UK)</option>
             <option value="condensed-80s">Tipografía: Condensada Técnica (80s)</option>
@@ -318,6 +384,46 @@ export const EditorialStylePanel: React.FC<EditorialStylePanelProps> = ({
             placeholder="O pegar URL de imagen..."
             className="flex-1 bg-white dark:bg-zinc-900/70 border border-stone-200 dark:border-zinc-800 rounded-lg px-2.5 py-2 text-xs text-stone-700 dark:text-zinc-300 focus:outline-none focus:border-amber-500"
           />
+        </div>
+
+        {/* Opción de Carátula sin Cuadrado (Imagen a Sangre Completa que rellena todo el frontal) */}
+        <div className="p-2.5 rounded-lg bg-stone-100 dark:bg-zinc-900/60 border border-stone-200 dark:border-zinc-800/80 space-y-2">
+          <label className="flex items-center justify-between gap-2 cursor-pointer text-xs font-medium text-stone-800 dark:text-zinc-200">
+            <span>Imagen a sangre completa (sin cuadrado)</span>
+            <input
+              type="checkbox"
+              checked={Boolean(project.fullBleedFront || project.templateId === 'full-bleed-art')}
+              onChange={(e) => {
+                const checked = e.target.checked;
+                onChangeProject((prev) => ({
+                  ...prev,
+                  fullBleedFront: checked,
+                  templateId:
+                    !checked && prev.templateId === 'full-bleed-art'
+                      ? 'cbs-epic'
+                      : prev.templateId,
+                }));
+              }}
+              className="rounded accent-amber-500 w-4 h-4"
+            />
+          </label>
+
+          {(project.fullBleedFront || project.templateId === 'full-bleed-art') && (
+            <label className="flex items-center justify-between gap-2 cursor-pointer text-[11px] text-stone-600 dark:text-zinc-400 pt-1 border-t border-stone-200/70 dark:border-zinc-800">
+              <span>Mostrar cartela de título/sello sobre la foto</span>
+              <input
+                type="checkbox"
+                checked={project.fullBleedShowOverlayText !== false}
+                onChange={(e) =>
+                  onChangeProject((prev) => ({
+                    ...prev,
+                    fullBleedShowOverlayText: e.target.checked,
+                  }))
+                }
+                className="rounded accent-amber-500"
+              />
+            </label>
+          )}
         </div>
 
         <div className="grid grid-cols-3 gap-3 pt-1">
@@ -429,7 +535,7 @@ export const EditorialStylePanel: React.FC<EditorialStylePanelProps> = ({
           onClick={() => setShowTechnicalDetails((v) => !v)}
           className="w-full flex items-center justify-between py-1.5 text-left text-[11px] font-mono uppercase tracking-widest text-stone-500 dark:text-zinc-400 hover:text-stone-800 dark:hover:text-zinc-200 transition"
         >
-          <span>Catálogo, Sello, Dolby y Notas</span>
+          <span>Logo Discográfica, QR, Barras y Notas</span>
           {showTechnicalDetails ? (
             <ChevronUp className="w-4 h-4" />
           ) : (
@@ -439,6 +545,92 @@ export const EditorialStylePanel: React.FC<EditorialStylePanelProps> = ({
 
         {showTechnicalDetails && (
           <div className="mt-3 space-y-2.5">
+            {/* Selector de Logo de Discográfica (estilo vhs.texs.org: Arista, CBS, EMI, Warner, TDK...) */}
+            <div>
+              <label className="block text-[10px] text-stone-500 dark:text-zinc-500 mb-1">
+                Logotipo de Discográfica / Sello
+              </label>
+              <select
+                value={project.companyLogo || 'auto'}
+                onChange={(e) =>
+                  onChangeProject((prev) => ({
+                    ...prev,
+                    companyLogo: e.target.value as CompanyLogoId,
+                  }))
+                }
+                className="w-full bg-white dark:bg-zinc-900/70 border border-stone-200 dark:border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs text-stone-800 dark:text-zinc-200"
+              >
+                <option value="auto">Automático según plantilla</option>
+                <option value="arista">Arista Records (Clásico 70s/80s)</option>
+                <option value="cbs">CBS Records (Walking Eye)</option>
+                <option value="emi">EMI Records</option>
+                <option value="warner">Warner Bros. / Sire</option>
+                <option value="dg">Deutsche Grammophon</option>
+                <option value="tdk">TDK (❖ TDK)</option>
+                <option value="maxell">Maxell</option>
+                <option value="sony">Sony</option>
+                <option value="virgin">Virgin</option>
+                <option value="none">Ninguno</option>
+              </select>
+            </div>
+
+            {/* Código QR de Spotify / Playlist (estilo vhs.texs.org) */}
+            <div className="p-2.5 rounded-lg bg-stone-100 dark:bg-zinc-900/50 border border-stone-200 dark:border-zinc-800 space-y-1.5">
+              <label className="flex items-center justify-between gap-2 cursor-pointer text-xs font-medium text-stone-800 dark:text-zinc-200">
+                <span className="flex items-center gap-1.5">
+                  <QrCode className="w-3.5 h-3.5 text-amber-500" />
+                  Incluir Código QR en Solapa / Inlay
+                </span>
+                <input
+                  type="checkbox"
+                  checked={Boolean(project.showQrCode)}
+                  onChange={(e) =>
+                    onChangeProject((prev) => ({ ...prev, showQrCode: e.target.checked }))
+                  }
+                  className="rounded accent-amber-500"
+                />
+              </label>
+              {project.showQrCode && (
+                <input
+                  type="text"
+                  value={project.qrCodeUrl || ''}
+                  onChange={(e) =>
+                    onChangeProject((prev) => ({ ...prev, qrCodeUrl: e.target.value }))
+                  }
+                  placeholder="URL para el QR (ej. https://open.spotify.com/playlist/...)"
+                  className="w-full bg-white dark:bg-zinc-900 border border-stone-200 dark:border-zinc-800 rounded px-2 py-1 text-[11px] font-mono text-stone-700 dark:text-zinc-300"
+                />
+              )}
+            </div>
+
+            {/* Código de Barras UPC/EAN (estilo vhs.texs.org cid=878727472725) */}
+            <div className="p-2.5 rounded-lg bg-stone-100 dark:bg-zinc-900/50 border border-stone-200 dark:border-zinc-800 space-y-1.5">
+              <label className="flex items-center justify-between gap-2 cursor-pointer text-xs font-medium text-stone-800 dark:text-zinc-200">
+                <span className="flex items-center gap-1.5">
+                  <Barcode className="w-3.5 h-3.5 text-amber-500" />
+                  Incluir Código de Barras (EAN/UPC)
+                </span>
+                <input
+                  type="checkbox"
+                  checked={Boolean(project.showBarcode)}
+                  onChange={(e) =>
+                    onChangeProject((prev) => ({ ...prev, showBarcode: e.target.checked }))
+                  }
+                  className="rounded accent-amber-500"
+                />
+              </label>
+              {project.showBarcode && (
+                <input
+                  type="text"
+                  value={project.barcodeNumber || project.catalogNumber}
+                  onChange={(e) =>
+                    onChangeProject((prev) => ({ ...prev, barcodeNumber: e.target.value }))
+                  }
+                  placeholder="12 dígitos (ej. 878727472725)"
+                  className="w-full bg-white dark:bg-zinc-900 border border-stone-200 dark:border-zinc-800 rounded px-2 py-1 text-[11px] font-mono text-stone-700 dark:text-zinc-300"
+                />
+              )}
+            </div>
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <label className="block text-[10px] text-stone-500 dark:text-zinc-500 mb-1">

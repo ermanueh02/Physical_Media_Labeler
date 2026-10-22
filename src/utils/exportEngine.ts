@@ -347,6 +347,167 @@ export async function exportPrintReadyPdfA4(
 }
 
 /**
+ * Generates an A4 print-ready PDF for CD Jewel Case (120x120mm Front Booklet + 150x118mm Back Tray Inlay)
+ * and CD Disc Sticker (Ø 116mm) at exact 1:1 millimeter scale (300 DPI).
+ */
+export async function exportCdPrintReadyPdfA4(
+  project: CassetteProject,
+  cdInsertsSvgEl: SVGSVGElement,
+  cdDiscSvgEl: SVGSVGElement,
+  mode: PdfExportMode = 'separate-2-pages'
+): Promise<void> {
+  const frontW = PHYSICAL_SPECS.CD_FRONT_WIDTH_MM; // 120 mm
+  const frontH = PHYSICAL_SPECS.CD_FRONT_HEIGHT_MM; // 120 mm
+  const trayW = PHYSICAL_SPECS.CD_TRAY_TOTAL_WIDTH_MM; // 150 mm
+  const trayH = PHYSICAL_SPECS.CD_TRAY_HEIGHT_MM; // 118 mm
+  const discD = PHYSICAL_SPECS.CD_DISC_OUTER_DIAMETER_MM; // 116 mm
+  const pxPerMm = PHYSICAL_SPECS.MM_TO_PX_300DPI;
+
+  const pdf = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4',
+    compress: true,
+  });
+
+  const renderCdInsertsSheetPage = async () => {
+    const pageW = 210;
+    const pageH = 297;
+    drawPageHeaderAndRuler(
+      pdf,
+      pageW,
+      pageH,
+      `HOJA 1: CARÁTULA FRONTAL CD (120×120 mm) + INLAY TRASERO (150×118 mm)`,
+      'SOPORTE RECOMENDADO: Cartulina / Papel Satinado 160–220 g/m²',
+      project
+    );
+
+    // 1. Render CD Front Booklet (120 x 120 mm) from cdInsertsSvgEl (x: 0..120, y: 0..120)
+    const frontDataUrl = await renderSvgElementToPngDataUrl(
+      cdInsertsSvgEl,
+      0,
+      0,
+      frontW,
+      frontH,
+      Math.round(frontW * pxPerMm),
+      Math.round(frontH * pxPerMm)
+    );
+
+    // 2. Render CD Back Tray Inlay (150 x 118 mm) from cdInsertsSvgEl (x: 134..284, y: 1..119)
+    const trayDataUrl = await renderSvgElementToPngDataUrl(
+      cdInsertsSvgEl,
+      frontW + 14,
+      1,
+      trayW,
+      trayH,
+      Math.round(trayW * pxPerMm),
+      Math.round(trayH * pxPerMm)
+    );
+
+    const fx = (pageW - frontW) / 2;
+    const fy = 25;
+    pdf.addImage(frontDataUrl, 'PNG', fx, fy, frontW, frontH);
+
+    // Crop marks for Front Cover (120x120 mm)
+    pdf.setDrawColor(220, 38, 38);
+    pdf.setLineWidth(0.2);
+    pdf.line(fx - 6, fy, fx - 1.5, fy);
+    pdf.line(fx, fy - 6, fx, fy - 1.5);
+    pdf.line(fx + frontW + 1.5, fy, fx + frontW + 6, fy);
+    pdf.line(fx + frontW, fy - 6, fx + frontW, fy - 1.5);
+    pdf.line(fx - 6, fy + frontH, fx - 1.5, fy + frontH);
+    pdf.line(fx, fy + frontH + 1.5, fx, fy + frontH + 6);
+    pdf.line(fx + frontW + 1.5, fy + frontH, fx + frontW + 6, fy + frontH);
+    pdf.line(fx + frontW, fy + frontH + 1.5, fx + frontW, fy + frontH + 6);
+
+    const tx = (pageW - trayW) / 2;
+    const ty = fy + frontH + 14; // 159 mm
+    pdf.addImage(trayDataUrl, 'PNG', tx, ty, trayW, trayH);
+
+    // Crop marks for Back Tray Inlay (150x118 mm)
+    pdf.line(tx - 6, ty, tx - 1.5, ty);
+    pdf.line(tx, ty - 6, tx, ty - 1.5);
+    pdf.line(tx + trayW + 1.5, ty, tx + trayW + 6, ty);
+    pdf.line(tx + trayW, ty - 6, tx + trayW, ty - 1.5);
+    pdf.line(tx - 6, ty + trayH, tx - 1.5, ty + trayH);
+    pdf.line(tx, ty + trayH + 1.5, tx, ty + trayH + 6);
+    pdf.line(tx + trayW + 1.5, ty + trayH, tx + trayW + 6, ty + trayH);
+    pdf.line(tx + trayW, ty + trayH + 1.5, tx + trayW, ty + trayH + 6);
+
+    // Cyan Fold Ticks for the two 6.0 mm Jewel Case Spines
+    pdf.setDrawColor(14, 165, 233);
+    for (const sOffset of [6, 144]) {
+      const sx = tx + sOffset;
+      pdf.line(sx, ty - 5, sx, ty - 1.2);
+      pdf.line(sx, ty + trayH + 1.2, sx, ty + trayH + 5);
+    }
+
+    drawRegistrationMark(pdf, tx - 8, ty + trayH / 2);
+    drawRegistrationMark(pdf, tx + trayW + 8, ty + trayH / 2);
+  };
+
+  const renderCdDiscSheetPage = async (sheetTitlePrefix: string) => {
+    const pageW = 210;
+    const pageH = 297;
+    drawPageHeaderAndRuler(
+      pdf,
+      pageW,
+      pageH,
+      `${sheetTitlePrefix}: GALLETA / ETIQUETA ADHESIVA DE CD (Ø 116 mm)`,
+      'SOPORTE RECOMENDADO: Papel Adhesivo para CD/DVD o Impresión Directa en Disco',
+      project
+    );
+
+    const discDataUrl = await renderSvgElementToPngDataUrl(
+      cdDiscSvgEl,
+      -2,
+      -2,
+      discD + 4,
+      discD + 4,
+      Math.round((discD + 4) * pxPerMm),
+      Math.round((discD + 4) * pxPerMm)
+    );
+
+    const dx = (pageW - (discD + 4)) / 2;
+    const dy1 = 32;
+    pdf.addImage(discDataUrl, 'PNG', dx, dy1, discD + 4, discD + 4);
+    drawRegistrationMark(pdf, dx - 6, dy1 + (discD + 4) / 2);
+    drawRegistrationMark(pdf, dx + discD + 10, dy1 + (discD + 4) / 2);
+
+    // Spare CD sticker below on the same A4 sheet
+    const dy2 = 160;
+    pdf.addImage(discDataUrl, 'PNG', dx, dy2, discD + 4, discD + 4);
+    drawRegistrationMark(pdf, dx - 6, dy2 + (discD + 4) / 2);
+    drawRegistrationMark(pdf, dx + discD + 10, dy2 + (discD + 4) / 2);
+  };
+
+  if (mode === 'jcard-only') {
+    await renderCdInsertsSheetPage();
+  } else if (mode === 'labels-only') {
+    await renderCdDiscSheetPage('HOJA DE ETIQUETAS CD');
+  } else {
+    await renderCdInsertsSheetPage();
+    pdf.addPage('a4', 'portrait');
+    await renderCdDiscSheetPage('HOJA 2');
+  }
+
+  const safeFileName =
+    project.albumTitle
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '') || 'cd-jewelcase';
+
+  const suffix =
+    mode === 'jcard-only'
+      ? 'cd-caratula-inlay-cartulina-a4'
+      : mode === 'labels-only'
+      ? 'cd-galleta-pegatina-a4'
+      : 'cd-completo-2-hojas-a4';
+
+  pdf.save(`${safeFileName}-${suffix}.pdf`);
+}
+
+/**
  * Generates a 2000 x 2000 px Square (1:1) PNG image suitable for a Spotify digital playlist cover.
  */
 export async function exportSquarePlaylistCover2000px(

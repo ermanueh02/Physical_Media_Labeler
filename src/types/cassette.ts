@@ -1,4 +1,8 @@
+export type MediaFormat = 'cassette' | 'cd';
+
 export type TemplateId =
+  | 'full-bleed-art'
+  | 'tdk-d-index'
   | 'cbs-epic'
   | 'emi-harvest'
   | 'warner-sire'
@@ -9,6 +13,19 @@ export type TemplateId =
   | 'blue-note-rvg'
   | 'basf-chromdioxid'
   | 'sub-pop-indie';
+
+export type CompanyLogoId =
+  | 'auto'
+  | 'none'
+  | 'arista'
+  | 'cbs'
+  | 'emi'
+  | 'warner'
+  | 'dg'
+  | 'tdk'
+  | 'maxell'
+  | 'sony'
+  | 'virgin';
 
 export type FoldFormat = 'j-standard' | 'j-plus-1' | 'j-plus-2';
 
@@ -26,7 +43,8 @@ export type TypographyPreset =
   | 'garamond-serif'
   | 'condensed-80s'
   | 'classical-dg'
-  | 'typewriter-mono';
+  | 'typewriter-mono'
+  | 'handwritten-pen';
 
 export type CoverFilter = 'none' | 'warm-70s' | 'high-contrast' | 'monochrome';
 
@@ -53,6 +71,7 @@ export interface CoverFraming {
 
 export interface CassetteProject {
   version: string;
+  mediaFormat?: MediaFormat;
   albumTitle: string;
   albumArtist: string;
   subtitleOrSeries: string;
@@ -69,12 +88,21 @@ export interface CassetteProject {
   foldFormat: FoldFormat;
   tapeCapacity: TapeCapacity;
   paperStock: PaperStockId;
+  customBgColor?: string;
+  customTextColor?: string;
   accentColor: string;
   secondaryColor: string;
   typography: TypographyPreset;
   dolbySystem: 'B-NR' | 'C-NR' | 'HX-PRO' | 'NONE';
   tapeBias: 'Normal (Fe2O3) 120µs' | 'CrO2 (Type II) 70µs' | 'Metal (Type IV) 70µs';
   stereoText: string;
+  fullBleedFront?: boolean;
+  fullBleedShowOverlayText?: boolean;
+  showQrCode?: boolean;
+  qrCodeUrl?: string;
+  showBarcode?: boolean;
+  barcodeNumber?: string;
+  companyLogo?: CompanyLogoId;
   showCropMarks: boolean;
   showDimensionGuides: boolean;
   tracks: Track[];
@@ -92,6 +120,15 @@ export const PHYSICAL_SPECS = {
   LABEL_WINDOW_HEIGHT_MM: 17.5,
   LABEL_REEL_SPACING_MM: 42.5,
   LABEL_REEL_DIAMETER_MM: 12.8,
+  CD_FRONT_WIDTH_MM: 120,
+  CD_FRONT_HEIGHT_MM: 120,
+  CD_TRAY_TOTAL_WIDTH_MM: 150,
+  CD_TRAY_HEIGHT_MM: 118,
+  CD_TRAY_SPINE_WIDTH_MM: 6,
+  CD_TRAY_BACK_WIDTH_MM: 138,
+  CD_DISC_OUTER_DIAMETER_MM: 116,
+  CD_DISC_HUB_DIAMETER_MM: 41,
+  CD_DISC_HOLE_DIAMETER_MM: 22,
   DPI: 300,
   MM_TO_PX_300DPI: 300 / 25.4,
 } as const;
@@ -183,6 +220,36 @@ export interface TemplateMetadata {
 }
 
 export const HISTORICAL_TEMPLATES: TemplateMetadata[] = [
+  {
+    id: 'full-bleed-art',
+    name: 'Portada a Sangre (Sin Marco)',
+    era: '1970–Hoy',
+    region: 'Universal / VHS.texs',
+    description:
+      'La imagen llena el 100% del frontal sin recuadro cuadrado; lomo, solapa e interior personalizables con QR, código de barras, logo de discográfica y color de fondo libre.',
+    defaultAccent: '#18181B',
+    defaultSecondary: '#FCD8B7',
+    defaultPaper: 'off-white',
+    defaultTypography: 'helvetica-univers',
+    defaultLabel: 'ARISTA',
+    defaultCatalog: '878727472725',
+    defaultStereoText: 'DOLBY SYSTEM • STEREO',
+  },
+  {
+    id: 'tdk-d-index',
+    name: 'TDK D (Cinta Virgen)',
+    era: '1982–1990',
+    region: 'Japón / Home Tape',
+    description:
+      'Réplica exacta de tarjeta índice TDK D: cabecera gris DATE/TIME + NOISE REDUCTION, tabla apaisada A/B con puntos centrales y lomo con pestaña diagonal negra TDK D.',
+    defaultAccent: '#18181B',
+    defaultSecondary: '#D6D5D0',
+    defaultPaper: 'off-white',
+    defaultTypography: 'handwritten-pen',
+    defaultLabel: 'TDK',
+    defaultCatalog: 'D',
+    defaultStereoText: 'Normal Bias EQ-120µs',
+  },
   {
     id: 'cbs-epic',
     name: 'CBS / Epic',

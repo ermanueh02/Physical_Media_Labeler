@@ -77,11 +77,19 @@ export const TracklistIngestPanel: React.FC<TracklistIngestPanelProps> = ({
 
       onChangeProject((prev) => ({
         ...prev,
-        albumTitle: result.title.toUpperCase(),
-        albumArtist: result.artist.toUpperCase(),
+        albumTitle: result.title,
+        albumArtist: result.artist,
         releaseYear: result.releaseYear || prev.releaseYear,
         recordLabel: result.label || prev.recordLabel,
         coverUrl: result.coverUrl || prev.coverUrl,
+        customBgColor: result.customBgColor ?? prev.customBgColor,
+        customTextColor: result.customTextColor ?? prev.customTextColor,
+        showQrCode: result.qrCodeUrl ? true : prev.showQrCode,
+        qrCodeUrl: result.qrCodeUrl ?? prev.qrCodeUrl,
+        showBarcode: result.barcodeNumber ? true : prev.showBarcode,
+        barcodeNumber: result.barcodeNumber ?? prev.barcodeNumber,
+        companyLogo: result.companyLogo ?? prev.companyLogo,
+        fullBleedFront: result.fullBleedFront ?? prev.fullBleedFront,
         tracks: result.tracks.length > 0 ? result.tracks : prev.tracks,
       }));
 

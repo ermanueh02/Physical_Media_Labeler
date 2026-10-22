@@ -9,7 +9,93 @@ export interface SpotifyExtractedData {
   coverUrl: string;
   label?: string;
   tracks: Track[];
-  sourceMode: 'spotify-web-api' | 'spotify-embed-proxy' | 'catalog-preset';
+  sourceMode: 'spotify-web-api' | 'spotify-embed-proxy' | 'catalog-preset' | 'vhs-texs-url';
+  customBgColor?: string;
+  customTextColor?: string;
+  qrCodeUrl?: string;
+  barcodeNumber?: string;
+  companyLogo?: 'arista' | 'cbs' | 'emi' | 'warner' | 'dg' | 'tdk' | 'maxell' | 'sony' | 'virgin';
+  dolbyEnabled?: boolean;
+  fullBleedFront?: boolean;
+}
+
+/**
+ * Parses a vhs.texs.org J-Card URL (e.g. https://vhs.texs.org/es/jcard?id=sp.17JFRRZhRXA3Zm5wsOl4Cl&musicAlbum=Autumn+Tape+II&bg=fcd8b7&musicA=...)
+ */
+export function parseVhsTexsJCardUrl(input: string): SpotifyExtractedData | null {
+  try {
+    if (!input.includes('vhs.texs.org') && !input.includes('musicA=')) return null;
+    const urlObj = new URL(input.trim());
+    const params = urlObj.searchParams;
+
+    const parseSidePipeString = (raw: string | null, side: 'A' | 'B'): Track[] => {
+      if (!raw) return [];
+      return raw
+        .split('|')
+        .map((item, idx) => {
+          const clean = item.trim();
+          if (!clean) return null;
+          // Match "Title - Artist (m:ss)"
+          const durMatch = clean.match(/\((\d+):(\d{2})\)\s*$/);
+          let durationSec = 210;
+          let withoutDur = clean;
+          if (durMatch) {
+            durationSec = parseInt(durMatch[1], 10) * 60 + parseInt(durMatch[2], 10);
+            withoutDur = clean.slice(0, durMatch.index).trim();
+          }
+          const lastDash = withoutDur.lastIndexOf(' - ');
+          const title = lastDash > 0 ? withoutDur.slice(0, lastDash).trim() : withoutDur;
+          const artist = lastDash > 0 ? withoutDur.slice(lastDash + 3).trim() : '';
+          return {
+            id: `texs-${side}-${idx}`,
+            title,
+            artist,
+            durationSec,
+            side,
+          };
+        })
+        .filter((t): t is Track => t !== null);
+    };
+
+    const sideA = parseSidePipeString(params.get('musicA'), 'A');
+    const sideB = parseSidePipeString(params.get('musicB'), 'B');
+    const allTracks = [...sideA, ...sideB];
+    if (allTracks.length === 0) return null;
+
+    const bgParam = params.get('bg');
+    const colorParam = params.get('color');
+    const clParam = (params.get('cl') || '').toLowerCase();
+    const companyLogo = clParam.includes('arista')
+      ? 'arista'
+      : clParam.includes('cbs')
+      ? 'cbs'
+      : clParam.includes('emi')
+      ? 'emi'
+      : clParam.includes('warner')
+      ? 'warner'
+      : clParam.includes('tdk')
+      ? 'tdk'
+      : undefined;
+
+    return {
+      title: params.get('musicAlbum') || 'Autumn Tape II',
+      artist: params.get('musicArtist') || 'er_manueh02',
+      releaseYear: new Date().getFullYear().toString(),
+      coverUrl: getPresetCoverSvgDataUrl('full-bleed-art'),
+      label: companyLogo ? companyLogo.toUpperCase() : 'ARISTA',
+      tracks: allTracks,
+      sourceMode: 'vhs-texs-url',
+      customBgColor: bgParam ? `#${bgParam.replace(/^#/, '')}` : '#FCD8B7',
+      customTextColor: colorParam ? `#${colorParam.replace(/^#/, '')}` : '#000000',
+      qrCodeUrl: params.get('playlistUrl') || undefined,
+      barcodeNumber: params.get('cid') || undefined,
+      companyLogo,
+      dolbyEnabled: params.get('ds') === '1',
+      fullBleedFront: true,
+    };
+  } catch {
+    return null;
+  }
 }
 
 export function parseSpotifyUrl(input: string): { type: 'album' | 'playlist'; id: string } | null {
@@ -317,10 +403,16 @@ export async function fetchSpotifyMetadata(
   urlOrUri: string,
   options?: { clientId?: string; clientSecret?: string; accessToken?: string }
 ): Promise<SpotifyExtractedData> {
+  // 0. Check if the user pasted a vhs.texs.org J-Card URL
+  const texsParsed = parseVhsTexsJCardUrl(urlOrUri);
+  if (texsParsed) {
+    return texsParsed;
+  }
+
   const parsed = parseSpotifyUrl(urlOrUri);
   if (!parsed) {
     throw new Error(
-      'Enlace de Spotify no válido. Usa un enlace de álbum o playlist (ej. https://open.spotify.com/album/...)'
+      'Enlace no válido. Pega un enlace de Spotify (álbum/playlist) o un enlace de vhs.texs.org/es/jcard.'
     );
   }
 
@@ -351,6 +443,159 @@ export interface HistoricalCatalogPreset {
 }
 
 export const SPOTIFY_HISTORICAL_PRESETS: HistoricalCatalogPreset[] = [
+  {
+    id: 'vhs-texs-autumn-tape-ii',
+    spotifyId: '17JFRRZhRXA3Zm5wsOl4Cl',
+    spotifyUrl: 'https://open.spotify.com/playlist/17JFRRZhRXA3Zm5wsOl4Cl',
+    badge: 'Autumn Tape II 🍂 (Full-Bleed)',
+    templateId: 'full-bleed-art',
+    project: {
+      version: '1.0',
+      mediaFormat: 'cassette',
+      albumTitle: 'Autumn Tape II',
+      albumArtist: 'er_manueh02',
+      subtitleOrSeries: 'AUTUMN MIXTAPE • ARISTA STEREO',
+      catalogNumber: '878727472725',
+      recordLabel: 'ARISTA',
+      releaseYear: '2026',
+      countryText: 'ARISTA RECORDS • SPOTIFY ANALOGUE EDITION',
+      legalText: 'DOLBY SYSTEM • FULL-BLEED EDITION • QR LINKED',
+      linerNotes:
+        'Selección otoñal de 22 pistas en Cara A y Cara B: Jethro Tull, George Harrison, Neil Young, Fleetwood Mac, Simon & Garfunkel, Genesis, Cocteau Twins, The Beatles, Supertramp y más.',
+      productionCredits: 'Curated by er_manueh02 • Autumn Tape II 🍂',
+      coverUrl: getPresetCoverSvgDataUrl('full-bleed-art'),
+      coverFraming: { zoom: 1, panX: 0, panY: 0, filter: 'none' },
+      templateId: 'full-bleed-art',
+      foldFormat: 'j-plus-1',
+      tapeCapacity: 'C-90',
+      paperStock: 'off-white',
+      customBgColor: '#FCD8B7',
+      customTextColor: '#000000',
+      accentColor: '#18181B',
+      secondaryColor: '#FCD8B7',
+      typography: 'helvetica-univers',
+      dolbySystem: 'B-NR',
+      tapeBias: 'Normal (Fe2O3) 120µs',
+      stereoText: 'DOLBY SYSTEM • STEREO',
+      fullBleedFront: true,
+      fullBleedShowOverlayText: true,
+      showQrCode: true,
+      qrCodeUrl: 'https://open.spotify.com/playlist/17JFRRZhRXA3Zm5wsOl4Cl',
+      showBarcode: true,
+      barcodeNumber: '878727472725',
+      companyLogo: 'arista',
+      showCropMarks: true,
+      showDimensionGuides: true,
+      tracks: [
+        { id: 'vt-a1', title: 'Songs from the Wood', artist: 'Jethro Tull', durationSec: 293, side: 'A' },
+        { id: 'vt-a2', title: "I'd Have You Anytime", artist: 'George Harrison', durationSec: 177, side: 'A' },
+        { id: 'vt-a3', title: 'Harvest Moon', artist: 'Neil Young', durationSec: 303, side: 'A' },
+        { id: 'vt-a4', title: 'Landslide', artist: 'Fleetwood Mac', durationSec: 199, side: 'A' },
+        { id: 'vt-a5', title: 'April Come She Will', artist: 'Simon & Garfunkel', durationSec: 112, side: 'A' },
+        { id: 'vt-a6', title: 'Fireside Song', artist: 'Genesis', durationSec: 208, side: 'A' },
+        { id: 'vt-a7', title: 'Heaven or Las Vegas', artist: 'Cocteau Twins', durationSec: 298, side: 'A' },
+        { id: 'vt-a8', title: 'The Only Living Boy in New York', artist: 'Simon & Garfunkel', durationSec: 241, side: 'A' },
+        { id: 'vt-a9', title: 'I Cheat the Hangman', artist: 'The Doobie Brothers', durationSec: 396, side: 'A' },
+        { id: 'vt-a10', title: 'On Horseback', artist: 'Mike Oldfield', durationSec: 205, side: 'A' },
+        { id: 'vt-a11', title: 'Twin Peaks Theme', artist: 'Angelo Badalamenti', durationSec: 310, side: 'A' },
+        { id: 'vt-b1', title: 'Ballad of Sir Frankie Crisp (Let It Roll)', artist: 'George Harrison', durationSec: 228, side: 'B' },
+        { id: 'vt-b2', title: 'Norwegian Wood (This Bird Has Flown)', artist: 'The Beatles', durationSec: 124, side: 'B' },
+        { id: 'vt-b3', title: 'Sister Moonshine', artist: 'Supertramp', durationSec: 316, side: 'B' },
+        { id: 'vt-b4', title: 'Sara (Single Edit)', artist: 'Fleetwood Mac', durationSec: 275, side: 'B' },
+        { id: 'vt-b5', title: 'Coming Around Again', artist: 'Carly Simon', durationSec: 218, side: 'B' },
+        { id: 'vt-b6', title: 'Take My Hand', artist: 'Matt Berry', durationSec: 190, side: 'B' },
+        { id: 'vt-b7', title: 'MacArthur Park', artist: 'Richard Harris', durationSec: 450, side: 'B' },
+        { id: 'vt-b8', title: 'Bridge Over Troubled Water', artist: 'Simon & Garfunkel', durationSec: 296, side: 'B' },
+        { id: 'vt-b9', title: 'Unquiet Slumbers for the Sleepers... - 2007 Remaster', artist: 'Genesis', durationSec: 139, side: 'B' },
+        { id: 'vt-b10', title: "...In That Quiet Earth'", artist: 'Genesis', durationSec: 294, side: 'B' },
+        { id: 'vt-b11', title: 'Afterglow', artist: 'Genesis', durationSec: 252, side: 'B' },
+      ],
+    },
+  },
+  {
+    id: 'tdk-d-autumn-tape-ii',
+    spotifyId: '7TDKDAutumnTapeII',
+    spotifyUrl: 'https://open.spotify.com/playlist/7TDKDAutumnTapeII',
+    badge: 'TDK D • Cinta Virgen',
+    templateId: 'tdk-d-index',
+    project: {
+      version: '1.0',
+      albumTitle: 'Autumn Tape II',
+      albumArtist: '22 · 10 · 26',
+      subtitleOrSeries: 'DYNAMIC CASSETTE • LOW NOISE HIGH OUTPUT',
+      catalogNumber: 'D',
+      recordLabel: 'TDK',
+      releaseYear: '22 · 10 · 26',
+      countryText: 'TDK ELECTRONICS CO., LTD. • TOKYO JAPAN',
+      legalText: 'DYNAMIC CASSETTE • NORMAL BIAS EQ-120µs',
+      linerNotes:
+        'Grabación doméstica en cinta TDK D90 (Dynamic Cassette). Índice manuscrito a doble columna (Cara A / Cara B).',
+      productionCredits: 'Grabado en cassette TDK D • Normal Bias 120µs',
+      coverUrl: getPresetCoverSvgDataUrl('mixtape-tdk-maxell'),
+      coverFraming: { zoom: 1, panX: 0, panY: 0, filter: 'none' },
+      templateId: 'tdk-d-index',
+      foldFormat: 'j-standard',
+      tapeCapacity: 'C-90',
+      paperStock: 'off-white',
+      accentColor: '#18181B',
+      secondaryColor: '#D6D5D0',
+      typography: 'handwritten-pen',
+      dolbySystem: 'NONE',
+      tapeBias: 'Normal (Fe2O3) 120µs',
+      stereoText: 'Normal Bias EQ-120µs',
+      showCropMarks: true,
+      showDimensionGuides: true,
+      tracks: [
+        { id: 'at1', title: 'Songs From The Wood', artist: 'Jethro Tull', durationSec: 292, side: 'A' },
+        { id: 'at2', title: "I'd Have You Anytime", artist: 'George Harrison', durationSec: 176, side: 'A' },
+        { id: 'at3', title: 'Harvest Moon', artist: 'Neil Young', durationSec: 303, side: 'A' },
+        { id: 'at4', title: 'Landslide', artist: 'Fleetwood Mac', durationSec: 199, side: 'A' },
+        { id: 'at5', title: 'April Come She Will', artist: 'Simon & Garfunkel', durationSec: 110, side: 'A' },
+        { id: 'at6', title: 'Fireside Song', artist: 'Genesis', durationSec: 258, side: 'A' },
+        { id: 'at7', title: 'Heaven Or Las Vegas', artist: 'Cocteau Twins', durationSec: 298, side: 'A' },
+        { id: 'at8', title: 'The Only Living Boy in NY', artist: 'Simon & Garfunkel', durationSec: 238, side: 'A' },
+        { id: 'at9', title: 'I Cheat The Hangman', artist: 'The Doobie Brothers', durationSec: 398, side: 'A' },
+        { id: 'at10', title: 'On Horseback', artist: 'Mike Oldfield', durationSec: 203, side: 'A' },
+        { id: 'at11', title: 'Twin Peaks Theme', artist: 'Angelo Badalamenti', durationSec: 304, side: 'A' },
+        { id: 'bt1', title: 'Ballad of Sir Frankie Crisp', artist: 'George Harrison', durationSec: 228, side: 'B' },
+        { id: 'bt2', title: 'Norwegian Wood', artist: 'The Beatles', durationSec: 125, side: 'B' },
+        { id: 'bt3', title: 'Sister Moonshine', artist: 'Supertramp', durationSec: 315, side: 'B' },
+        { id: 'bt4', title: 'Sara (Single Edit)', artist: 'Fleetwood Mac', durationSec: 278, side: 'B' },
+        { id: 'bt5', title: 'Coming Around Again', artist: 'Carly Simon', durationSec: 219, side: 'B' },
+        { id: 'bt6', title: 'Take My Hand', artist: 'Simple Minds', durationSec: 245, side: 'B' },
+        { id: 'bt7', title: 'MacArthur Park', artist: 'Richard Harris', durationSec: 441, side: 'B' },
+        { id: 'bt8', title: 'Bridge Over Troubled Water', artist: 'Simon & Garfunkel', durationSec: 295, side: 'B' },
+        {
+          id: 'bt9',
+          title: 'Wind and Wuthering Suite:',
+          artist: 'Genesis',
+          durationSec: 210,
+          side: 'B',
+        },
+        {
+          id: 'bt10',
+          title: "'Unquiet Slumbers for the",
+          artist: 'Genesis',
+          durationSec: 140,
+          side: 'B',
+        },
+        {
+          id: 'bt11',
+          title: 'Sleepers... In That Quiet',
+          artist: 'Genesis',
+          durationSec: 165,
+          side: 'B',
+        },
+        {
+          id: 'bt12',
+          title: "Earth' / Afterglow",
+          artist: 'Genesis',
+          durationSec: 251,
+          side: 'B',
+        },
+      ],
+    },
+  },
   {
     id: 'cbs-mecano-1982',
     spotifyId: '4A2n685X2p3HAjF9m85s2P',

@@ -9,10 +9,14 @@ import {
 import { formatDuration } from '../../utils/timeAndBalance';
 import {
   CompactCassetteLogo,
+  CompanyLogoBadge,
   DeutscheGrammophonCrest,
   DolbyVectorLogo,
   EmiLogoVector,
   RightsSocietyBox,
+  TdkLogoVector,
+  VectorBarcodeSvg,
+  VectorQrCodeSvg,
   WarnerSireLogoVector,
 } from './TechnicalLogos';
 
@@ -28,6 +32,8 @@ export function getFontFamilyForPreset(preset: TypographyPreset): string {
       return 'Cinzel, "EB Garamond", Georgia, serif';
     case 'typewriter-mono':
       return '"Courier Prime", "JetBrains Mono", Courier, monospace';
+    case 'handwritten-pen':
+      return '"Caveat", cursive, sans-serif';
   }
 }
 
@@ -46,7 +52,13 @@ export const JCardSvgRenderer: React.FC<JCardSvgRendererProps> = ({
   className = '',
   idPrefix = 'jcard',
 }) => {
-  const paper = PAPER_STOCKS[project.paperStock] || PAPER_STOCKS['editorial-cream'];
+  const basePaper = PAPER_STOCKS[project.paperStock] || PAPER_STOCKS['editorial-cream'];
+  const paper = {
+    ...basePaper,
+    bgHex: project.customBgColor || basePaper.bgHex,
+    textHex: project.customTextColor || basePaper.textHex,
+    subTextHex: project.customTextColor ? project.customTextColor : basePaper.subTextHex,
+  };
   const fontFamily = getFontFamilyForPreset(project.typography);
 
   const extraPanelsCount =
@@ -129,6 +141,82 @@ export const JCardSvgRenderer: React.FC<JCardSvgRendererProps> = ({
 
   // Practical, minimalist 1970s–1980s Front Panel (65 x 102 mm)
   const renderFrontPanel = () => {
+    if (project.templateId === 'full-bleed-art' || project.fullBleedFront) {
+      // Portada a Sangre Completa (65 x 102 mm) sin marco cuadrado: la imagen ocupa todo el frontal
+      const showOverlay = project.fullBleedShowOverlayText !== false;
+      const activeLogo =
+        project.companyLogo && project.companyLogo !== 'auto' && project.companyLogo !== 'none'
+          ? project.companyLogo
+          : 'arista';
+
+      return (
+        <g>
+          {renderCoverArt(frontX, 0, frontW, cardH, `${idPrefix}-full-bleed-cover`)}
+
+          {showOverlay && (
+            <g>
+              {/* Banda inferior traslúcida o limpia con título y sello */}
+              <rect
+                x={frontX + 4}
+                y={75}
+                width={frontW - 8}
+                height={21.5}
+                rx={1.2}
+                fill={paper.bgHex}
+                opacity="0.9"
+              />
+              <text
+                x={frontX + frontW / 2}
+                y={82.2}
+                textAnchor="middle"
+                fill={paper.textHex}
+                fontFamily={fontFamily}
+                fontWeight="800"
+                fontSize="3.6"
+                letterSpacing="0.16"
+              >
+                {truncate(project.albumTitle, 25)}
+              </text>
+              {project.albumArtist.trim() !== '' && (
+                <text
+                  x={frontX + frontW / 2}
+                  y={86.8}
+                  textAnchor="middle"
+                  fill={paper.subTextHex}
+                  fontFamily={fontFamily}
+                  fontWeight="600"
+                  fontSize="2.25"
+                  letterSpacing="0.14"
+                >
+                  {truncate(project.albumArtist, 30)}
+                </text>
+              )}
+
+              <CompanyLogoBadge
+                logoId={activeLogo}
+                x={frontX + 7}
+                y={90.2}
+                width={10.5}
+                height={4.2}
+                color={paper.textHex}
+              />
+
+              {project.dolbySystem !== 'NONE' && (
+                <DolbyVectorLogo
+                  x={frontX + frontW - 18}
+                  y={90.4}
+                  width={11}
+                  height={4.0}
+                  color={paper.textHex}
+                  showText={true}
+                />
+              )}
+            </g>
+          )}
+        </g>
+      );
+    }
+
     switch (project.templateId) {
       case 'cbs-epic': {
         const artSize = 52;
@@ -989,6 +1077,274 @@ export const JCardSvgRenderer: React.FC<JCardSvgRendererProps> = ({
         );
       }
 
+      case 'tdk-d-index': {
+        // Plantilla TDK D (Cinta Virgen — Índice Horizontal Clásico)
+        // En el sistema local rotado 90° (translate(frontX + frontW, 0) rotate(90)):
+        // lx va de 0 a 102 mm (de izquierda a derecha) y ly va de 0 a 65 mm (de arriba a abajo).
+        const isHandwritten = project.typography === 'handwritten-pen';
+        const headerH = 8.2;
+        const rowCount = 12;
+        const rowH = (frontW - headerH) / rowCount; // ~4.733 mm por renglón
+
+        const buildColumnLines = (tracks: Track[]) => {
+          const lines: { text: string; indent?: boolean; rightText?: string }[] = [];
+          if (tracks.length <= 6) {
+            tracks.forEach((t, idx) => {
+              const hasDistinctArtist =
+                t.artist &&
+                t.artist.trim() !== '' &&
+                t.artist.toLowerCase() !== project.albumArtist.toLowerCase();
+              if (hasDistinctArtist) {
+                lines.push({
+                  text: `${idx + 1}. ${truncate(t.artist, 22)} -`,
+                  indent: false,
+                });
+                lines.push({
+                  text: truncate(t.title, 24),
+                  indent: true,
+                });
+              } else {
+                lines.push({
+                  text: `${idx + 1}. ${truncate(t.title, 24)}`,
+                  indent: false,
+                  rightText: formatDuration(t.durationSec),
+                });
+                lines.push({ text: '', indent: true });
+              }
+            });
+          } else {
+            tracks.slice(0, 12).forEach((t, idx) => {
+              const hasDistinctArtist =
+                t.artist &&
+                t.artist.trim() !== '' &&
+                t.artist.toLowerCase() !== project.albumArtist.toLowerCase();
+              const label = hasDistinctArtist
+                ? `${idx + 1}. ${t.artist} - ${t.title}`
+                : `${idx + 1}. ${t.title}`;
+              lines.push({
+                text: truncate(label, 27),
+                indent: false,
+              });
+            });
+          }
+          return lines.slice(0, 12);
+        };
+
+        const colALines = buildColumnLines(sideATracks);
+        const colBLines = buildColumnLines(sideBTracks);
+
+        const renderHeaderHalf = (sideLabel: 'A' | 'B', offsetX: number, totalSec: number) => (
+          <g transform={`translate(${offsetX}, 0)`}>
+            {/* Caja negra [A] o [B] */}
+            <rect x={3.8} y={1.5} width={5.2} height={5.2} fill={project.accentColor} />
+            <text
+              x={6.4}
+              y={5.3}
+              textAnchor="middle"
+              fill="#FFFFFF"
+              fontFamily="Inter, Helvetica, Arial, sans-serif"
+              fontWeight="900"
+              fontSize="3.8"
+            >
+              {sideLabel}
+            </text>
+
+            {/* DATE y TIME con líneas */}
+            <text
+              x={10.4}
+              y={3.6}
+              fill="#18181B"
+              fontFamily="Inter, Helvetica, Arial, sans-serif"
+              fontWeight="700"
+              fontSize="1.55"
+              letterSpacing="0.06"
+            >
+              DATE
+            </text>
+            <line x1={16.2} y1={3.7} x2={34.8} y2={3.7} stroke="#18181B" strokeWidth="0.22" />
+            <text
+              x={25.5}
+              y={3.3}
+              textAnchor="middle"
+              fill={paper.textHex}
+              fontFamily={fontFamily}
+              fontWeight="700"
+              fontSize={isHandwritten ? '2.45' : '1.75'}
+            >
+              {project.releaseYear}
+            </text>
+
+            <text
+              x={10.4}
+              y={6.6}
+              fill="#18181B"
+              fontFamily="Inter, Helvetica, Arial, sans-serif"
+              fontWeight="700"
+              fontSize="1.55"
+              letterSpacing="0.06"
+            >
+              TIME
+            </text>
+            <line x1={16.2} y1={6.7} x2={34.8} y2={6.7} stroke="#18181B" strokeWidth="0.22" />
+            <text
+              x={25.5}
+              y={6.3}
+              textAnchor="middle"
+              fill={paper.textHex}
+              fontFamily={fontFamily}
+              fontWeight="700"
+              fontSize={isHandwritten ? '2.45' : '1.75'}
+            >
+              {formatDuration(totalSec)}
+            </text>
+
+            {/* Divisor vertical de NOISE REDUCTION */}
+            <line x1={36.2} y1={0} x2={36.2} y2={headerH} stroke="#18181B" strokeWidth="0.3" />
+
+            <text
+              x={37.4}
+              y={3.6}
+              fill="#18181B"
+              fontFamily="Inter, Helvetica, Arial, sans-serif"
+              fontWeight="700"
+              fontSize="1.4"
+            >
+              NOISE
+            </text>
+            <text
+              x={37.4}
+              y={6.1}
+              fill="#18181B"
+              fontFamily="Inter, Helvetica, Arial, sans-serif"
+              fontWeight="700"
+              fontSize="1.35"
+            >
+              REDUCTION
+            </text>
+
+            {/* Casilla blanca de verificación N.R. */}
+            <rect
+              x={46.0}
+              y={2.3}
+              width={3.4}
+              height={3.4}
+              fill="#FFFFFF"
+              stroke="#18181B"
+              strokeWidth="0.25"
+            />
+            {project.dolbySystem !== 'NONE' && (
+              <text
+                x={47.7}
+                y={5.0}
+                textAnchor="middle"
+                fill={paper.textHex}
+                fontFamily={fontFamily}
+                fontWeight="800"
+                fontSize="2.8"
+              >
+                ✓
+              </text>
+            )}
+          </g>
+        );
+
+        return (
+          <g transform={`translate(${frontX + frontW}, 0) rotate(90)`}>
+            {/* Fondo crema/blanco cálido de tarjeta TDK */}
+            <rect x={0} y={0} width={cardH} height={frontW} fill={paper.bgHex} />
+
+            {/* Franja superior gris técnica TDK (DATE / TIME / NOISE REDUCTION) */}
+            <rect x={0} y={0} width={cardH} height={headerH} fill="#D5D4CE" />
+            {renderHeaderHalf('A', 0, sideASec)}
+            <line x1={51} y1={0} x2={51} y2={headerH} stroke="#18181B" strokeWidth="0.35" />
+            {renderHeaderHalf('B', 51, sideBSec)}
+            <line x1={0} y1={headerH} x2={cardH} y2={headerH} stroke="#18181B" strokeWidth="0.45" />
+
+            {/* 12 Renglones pautados con línea punteada y puntos divisorios centrales */}
+            {Array.from({ length: rowCount }).map((_, rIdx) => {
+              const rowTop = headerH + rIdx * rowH;
+              const rowBottom = rowTop + rowH;
+              const textBaseline = rowBottom - 1.15;
+              const dotY = rowTop + rowH * 0.54;
+              const leftEntry = colALines[rIdx];
+              const rightEntry = colBLines[rIdx];
+
+              return (
+                <g key={`tdk-row-${rIdx}`}>
+                  {/* Línea horizontal punteada (excepto en el borde inferior del panel) */}
+                  {rIdx < rowCount - 1 && (
+                    <line
+                      x1={3.5}
+                      y1={rowBottom}
+                      x2={cardH - 3.5}
+                      y2={rowBottom}
+                      stroke="#52525B"
+                      strokeWidth="0.22"
+                      strokeDasharray="0.55 0.75"
+                    />
+                  )}
+
+                  {/* Punto central separador de columnas A / B (fiel al encarte TDK D) */}
+                  <circle cx={51} cy={dotY} r={0.42} fill="#18181B" />
+
+                  {/* Texto Columna Izquierda (Cara A) */}
+                  {leftEntry && leftEntry.text && (
+                    <text
+                      x={leftEntry.indent ? 8.2 : 4.2}
+                      y={textBaseline}
+                      fill={paper.textHex}
+                      fontFamily={fontFamily}
+                      fontWeight={isHandwritten ? '700' : '600'}
+                      fontSize={isHandwritten ? '3.35' : '2.25'}
+                    >
+                      {leftEntry.text}
+                    </text>
+                  )}
+                  {leftEntry && leftEntry.rightText && (
+                    <text
+                      x={49.2}
+                      y={textBaseline}
+                      textAnchor="end"
+                      fill={paper.subTextHex}
+                      fontFamily={fontFamily}
+                      fontSize={isHandwritten ? '2.6' : '1.8'}
+                    >
+                      {leftEntry.rightText}
+                    </text>
+                  )}
+
+                  {/* Texto Columna Derecha (Cara B) */}
+                  {rightEntry && rightEntry.text && (
+                    <text
+                      x={rightEntry.indent ? 56.8 : 53.0}
+                      y={textBaseline}
+                      fill={paper.textHex}
+                      fontFamily={fontFamily}
+                      fontWeight={isHandwritten ? '700' : '600'}
+                      fontSize={isHandwritten ? '3.35' : '2.25'}
+                    >
+                      {rightEntry.text}
+                    </text>
+                  )}
+                  {rightEntry && rightEntry.rightText && (
+                    <text
+                      x={cardH - 4.0}
+                      y={textBaseline}
+                      textAnchor="end"
+                      fill={paper.subTextHex}
+                      fontFamily={fontFamily}
+                      fontSize={isHandwritten ? '2.6' : '1.8'}
+                    >
+                      {rightEntry.rightText}
+                    </text>
+                  )}
+                </g>
+              );
+            })}
+          </g>
+        );
+      }
+
       case 'mixtape-tdk-maxell':
       default: {
         const gridPatternId = `${idPrefix}-mm-grid`;
@@ -1141,36 +1497,110 @@ export const JCardSvgRenderer: React.FC<JCardSvgRendererProps> = ({
 
   // Minimalist Spine Panel (12.5 x 102 mm)
   const renderSpinePanel = () => {
+    if (project.templateId === 'tdk-d-index') {
+      // En el sistema rotado 90° desde (spineX + spineW = 31.5, 0):
+      // lx va de 0 a 102 mm (izquierda a derecha) y ly va de 0 a 12.5 mm (arriba a abajo).
+      const isHandwritten = project.typography === 'handwritten-pen';
+      const rawBadge = project.catalogNumber
+        .replace(/^TDK\s*/i, '')
+        .replace(/[- ]?(C60|C90|60|90)$/i, '')
+        .trim();
+      const modelCode = rawBadge ? truncate(rawBadge, 4) : 'D';
+
+      return (
+        <g transform={`translate(${spineX + spineW}, 0) rotate(90)`}>
+          {/* Fondo blanco/crema de la sección principal del lomo */}
+          <rect x={0} y={0} width={cardH} height={spineW} fill={paper.bgHex} />
+
+          {/* Trapecio superior izquierdo negro con logotipo oficial TDK (❖ TDK) */}
+          <polygon points="0,0 26.8,0 23.0,6.25 0,6.25" fill={project.accentColor} />
+          <TdkLogoVector x={3.2} y={1.25} width={17.5} height={3.8} color="#FFFFFF" />
+
+          {/* Trapecio inferior izquierdo gris con código de serie ("D", "SA", "AD") en cursiva gruesa */}
+          <polygon points="0,6.25 23.0,6.25 19.2,12.5 0,12.5" fill="#D5D4CE" />
+          <line x1={0} y1={6.25} x2={23.0} y2={6.25} stroke="#18181B" strokeWidth="0.35" />
+          <text
+            x={10.5}
+            y={11.1}
+            textAnchor="middle"
+            fill="#18181B"
+            fontFamily="Inter, Helvetica, Arial, sans-serif"
+            fontStyle="italic"
+            fontWeight="900"
+            fontSize="5.4"
+          >
+            {modelCode}
+          </text>
+
+          {/* Línea diagonal negra característica de TDK */}
+          <line x1={26.8} y1={0} x2={19.2} y2={12.5} stroke="#18181B" strokeWidth="0.55" />
+
+          {/* Bordes horizontales del lomo */}
+          <line x1={0} y1={0} x2={cardH} y2={0} stroke="#18181B" strokeWidth="0.45" />
+          <line x1={0} y1={spineW} x2={cardH} y2={spineW} stroke="#18181B" strokeWidth="0.45" />
+
+          {/* Título principal de la cinta en el área blanca del lomo (ej. "Autumn Tape II") */}
+          <text
+            x={61.5}
+            y={isHandwritten ? 8.8 : 8.1}
+            textAnchor="middle"
+            fill={paper.textHex}
+            fontFamily={fontFamily}
+            fontWeight={isHandwritten ? '700' : '800'}
+            fontSize={isHandwritten ? '7.8' : '5.2'}
+            letterSpacing={isHandwritten ? '0.05' : '0.15'}
+          >
+            {truncate(project.albumTitle, 28)}
+          </text>
+        </g>
+      );
+    }
+
     const isDG = project.templateId === 'deutsche-grammophon';
     const spineBg = isDG ? project.accentColor : paper.bgHex;
     const spineText = isDG ? '#18181B' : paper.textHex;
     const spineAccent = isDG ? '#18181B' : project.accentColor;
     const spineCenterX = spineX + spineW / 2;
+    const activeLogo =
+      project.companyLogo && project.companyLogo !== 'auto' && project.companyLogo !== 'none'
+        ? project.companyLogo
+        : null;
 
     return (
       <g>
         <rect x={spineX} y={0} width={spineW} height={cardH} fill={spineBg} />
 
+        {activeLogo ? (
+          <CompanyLogoBadge
+            logoId={activeLogo}
+            x={spineCenterX - 4.2}
+            y={4.2}
+            width={8.4}
+            height={3.6}
+            color={spineAccent}
+          />
+        ) : (
+          <text
+            x={spineCenterX}
+            y={7.5}
+            textAnchor="middle"
+            fill={spineAccent}
+            fontFamily="Inter, Helvetica, sans-serif"
+            fontWeight="900"
+            fontSize="1.9"
+            letterSpacing="0.1"
+          >
+            {truncate(project.recordLabel.split('/')[0].trim(), 8)}
+          </text>
+        )}
         <text
           x={spineCenterX}
-          y={7.5}
-          textAnchor="middle"
-          fill={spineAccent}
-          fontFamily="Inter, Helvetica, sans-serif"
-          fontWeight="900"
-          fontSize="1.9"
-          letterSpacing="0.1"
-        >
-          {truncate(project.recordLabel.split('/')[0].trim(), 8)}
-        </text>
-        <text
-          x={spineCenterX}
-          y={10.8}
+          y={11.2}
           textAnchor="middle"
           fill={spineText}
           fontFamily="JetBrains Mono, monospace"
           fontWeight="700"
-          fontSize="1.55"
+          fontSize="1.45"
         >
           {truncate(project.catalogNumber.replace(/^CBS\s+/i, ''), 9)}
         </text>
@@ -1239,89 +1669,351 @@ export const JCardSvgRenderer: React.FC<JCardSvgRendererProps> = ({
 
   // Clean Back Flap Panel (19 x 102 mm)
   const renderFlapPanel = () => {
+    if (project.templateId === 'tdk-d-index') {
+      // En el encarte TDK D real, la solapa trasera (19 x 102 mm) está impresa invertida (180° respecto al frontal)
+      // para que al doblarse detrás de la caja Norelco quede al derecho.
+      // Con transform="translate(0, cardH) rotate(-90)", lx va de 0 a 102 mm y ly va de 0 a 19 mm.
+      const isNrOn = project.dolbySystem !== 'NONE';
+      const biasLabel = project.tapeBias.includes('CrO2')
+        ? 'High Position'
+        : project.tapeBias.includes('Metal')
+        ? 'Metal Bias'
+        : 'Normal Bias';
+      const eqLabel = project.tapeBias.includes('70') ? 'EQ-70µs' : 'EQ-120µs';
+
+      const renderFlapRow = (sideChar: 'A' | 'B', yTop: number) => (
+        <g transform={`translate(3.8, ${yTop})`}>
+          {/* Caja blanca con borde para DATE y TIME */}
+          <rect
+            x={6.2}
+            y={0}
+            width={41.5}
+            height={6.6}
+            fill={paper.bgHex}
+            stroke="#18181B"
+            strokeWidth="0.25"
+          />
+          <line x1={26.8} y1={0} x2={26.8} y2={6.6} stroke="#18181B" strokeWidth="0.25" />
+
+          {/* Caja negra [A] o [B] */}
+          <rect x={0} y={0} width={6.2} height={6.6} fill={project.accentColor} />
+          <text
+            x={3.1}
+            y={4.8}
+            textAnchor="middle"
+            fill="#FFFFFF"
+            fontFamily="Inter, Helvetica, Arial, sans-serif"
+            fontWeight="900"
+            fontSize="4.2"
+          >
+            {sideChar}
+          </text>
+
+          <text
+            x={8.0}
+            y={2.4}
+            fill="#18181B"
+            fontFamily="Inter, Helvetica, Arial, sans-serif"
+            fontWeight="700"
+            fontSize="1.5"
+          >
+            DATE
+          </text>
+          <text
+            x={28.5}
+            y={2.4}
+            fill="#18181B"
+            fontFamily="Inter, Helvetica, Arial, sans-serif"
+            fontWeight="700"
+            fontSize="1.5"
+          >
+            TIME
+          </text>
+
+          {/* Bloque N.R. [ ] ON [ ] OFF */}
+          <text
+            x={50.2}
+            y={4.2}
+            fill="#18181B"
+            fontFamily="Inter, Helvetica, Arial, sans-serif"
+            fontWeight="800"
+            fontSize="1.8"
+          >
+            N.R.
+          </text>
+
+          <rect
+            x={55.8}
+            y={1.6}
+            width={3.2}
+            height={3.2}
+            fill="#FFFFFF"
+            stroke="#18181B"
+            strokeWidth="0.25"
+          />
+          {isNrOn && (
+            <text
+              x={57.4}
+              y={4.2}
+              textAnchor="middle"
+              fill="#18181B"
+              fontFamily="Inter, Helvetica, sans-serif"
+              fontWeight="900"
+              fontSize="2.5"
+            >
+              ✓
+            </text>
+          )}
+          <text
+            x={59.8}
+            y={4.1}
+            fill="#18181B"
+            fontFamily="Inter, Helvetica, Arial, sans-serif"
+            fontWeight="700"
+            fontSize="1.55"
+          >
+            ON
+          </text>
+
+          <rect
+            x={64.2}
+            y={1.6}
+            width={3.2}
+            height={3.2}
+            fill="#FFFFFF"
+            stroke="#18181B"
+            strokeWidth="0.25"
+          />
+          {!isNrOn && (
+            <text
+              x={65.8}
+              y={4.2}
+              textAnchor="middle"
+              fill="#18181B"
+              fontFamily="Inter, Helvetica, sans-serif"
+              fontWeight="900"
+              fontSize="2.5"
+            >
+              ✓
+            </text>
+          )}
+          <text
+            x={68.2}
+            y={4.1}
+            fill="#18181B"
+            fontFamily="Inter, Helvetica, Arial, sans-serif"
+            fontWeight="700"
+            fontSize="1.55"
+          >
+            OFF
+          </text>
+        </g>
+      );
+
+      return (
+        <g transform={`translate(0, ${cardH}) rotate(-90)`}>
+          <rect x={0} y={0} width={cardH} height={flapW} fill="#D5D4CE" />
+
+          {/* Tabla técnica derecha (Normal Bias EQ-120µs / STEREO / MONO) que al invertirse queda a la izquierda */}
+          <g transform="translate(3.8, 3.2)">
+            <text
+              x={0}
+              y={3.0}
+              fill="#18181B"
+              fontFamily="Inter, Helvetica, Arial, sans-serif"
+              fontWeight="800"
+              fontSize="2.9"
+            >
+              {biasLabel}
+            </text>
+            <text
+              x={0}
+              y={6.8}
+              fill="#18181B"
+              fontFamily="Inter, Helvetica, Arial, sans-serif"
+              fontWeight="800"
+              fontSize="2.9"
+            >
+              {eqLabel}
+            </text>
+
+            {/* Casillas STEREO / MONO */}
+            <rect
+              x={0}
+              y={9.4}
+              width={3.2}
+              height={3.2}
+              fill="#FFFFFF"
+              stroke="#18181B"
+              strokeWidth="0.25"
+            />
+            <text
+              x={1.6}
+              y={11.9}
+              textAnchor="middle"
+              fill="#18181B"
+              fontFamily="Inter, Helvetica, sans-serif"
+              fontWeight="900"
+              fontSize="2.4"
+            >
+              ✓
+            </text>
+            <text
+              x={4.0}
+              y={11.8}
+              fill="#18181B"
+              fontFamily="Inter, Helvetica, Arial, sans-serif"
+              fontWeight="700"
+              fontSize="1.55"
+            >
+              STEREO
+            </text>
+
+            <rect
+              x={12.2}
+              y={9.4}
+              width={3.2}
+              height={3.2}
+              fill="#FFFFFF"
+              stroke="#18181B"
+              strokeWidth="0.25"
+            />
+            <text
+              x={16.2}
+              y={11.8}
+              fill="#18181B"
+              fontFamily="Inter, Helvetica, Arial, sans-serif"
+              fontWeight="700"
+              fontSize="1.55"
+            >
+              MONO
+            </text>
+          </g>
+
+          {/* Filas [A] y [B] invertidas al dorso */}
+          <g transform="translate(22, 0)">
+            {renderFlapRow('B', 2.4)}
+            {renderFlapRow('A', 9.8)}
+          </g>
+        </g>
+      );
+    }
+
     return (
       <g>
         <rect x={flapX} y={0} width={flapW} height={cardH} fill={paper.bgHex} />
 
-        <g transform={`translate(${flapX + 2.5}, 7.5)`}>
+        <g transform={`translate(${flapX + 2.2}, 6.5)`}>
           <text
             x={0}
             y={0}
             fill={project.accentColor}
             fontFamily="Inter, Helvetica, sans-serif"
             fontWeight="800"
-            fontSize="1.75"
-            letterSpacing="0.1"
+            fontSize="1.7"
+            letterSpacing="0.08"
           >
             CARA A ({formatDuration(sideASec)})
           </text>
-          {sideATracks.slice(0, 6).map((t, idx) => (
+          {sideATracks.slice(0, 8).map((t, idx) => (
             <text
               key={t.id}
               x={0}
-              y={2.8 + idx * 2.4}
+              y={2.5 + idx * 2.15}
               fill={paper.textHex}
               fontFamily={fontFamily}
-              fontSize="1.45"
+              fontSize="1.38"
             >
-              {idx + 1}. {truncate(t.title, 15)}
+              {idx + 1}. {truncate(t.title, 16)}
             </text>
           ))}
 
           <text
             x={0}
-            y={21}
+            y={22.2}
             fill={project.accentColor}
             fontFamily="Inter, Helvetica, sans-serif"
             fontWeight="800"
-            fontSize="1.75"
-            letterSpacing="0.1"
+            fontSize="1.7"
+            letterSpacing="0.08"
           >
             CARA B ({formatDuration(sideBSec)})
           </text>
-          {sideBTracks.slice(0, 6).map((t, idx) => (
+          {sideBTracks.slice(0, 8).map((t, idx) => (
             <text
               key={t.id}
               x={0}
-              y={23.8 + idx * 2.4}
+              y={24.7 + idx * 2.15}
               fill={paper.textHex}
               fontFamily={fontFamily}
-              fontSize="1.45"
+              fontSize="1.38"
             >
-              {idx + 1}. {truncate(t.title, 15)}
+              {idx + 1}. {truncate(t.title, 16)}
             </text>
           ))}
         </g>
 
-        <RightsSocietyBox x={flapX + 2.5} y={53} color={paper.textHex} text="SGAE / BIEM" />
+        {/* Código QR (estilo vhs.texs.org) en la solapa trasera */}
+        {project.showQrCode ? (
+          <VectorQrCodeSvg
+            data={project.qrCodeUrl || 'https://open.spotify.com'}
+            x={flapX + 3.5}
+            y={50}
+            size={12}
+            color={paper.textHex}
+            bgColor="#FFFFFF"
+          />
+        ) : (
+          <RightsSocietyBox x={flapX + 2.5} y={53} color={paper.textHex} text="SGAE / BIEM" />
+        )}
 
-        <g transform={`translate(${flapX + 13}, 96.5) rotate(-90)`}>
-          <text
-            x={0}
-            y={-3}
-            fill={paper.subTextHex}
-            fontFamily="Inter, Helvetica, sans-serif"
-            fontWeight="600"
-            fontSize="1.35"
-          >
-            {truncate(project.countryText, 36)}
-          </text>
-          <text
-            x={0}
-            y={0}
-            fill={paper.subTextHex}
-            fontFamily="Inter, Helvetica, sans-serif"
-            fontSize="1.2"
-          >
-            {truncate(project.legalText, 42)}
-          </text>
-        </g>
+        {/* Código de Barras UPC/EAN (estilo vhs.texs.org cid=878727472725) */}
+        {project.showBarcode ? (
+          <g transform={`translate(${flapX + 2.2}, 96.5) rotate(-90)`}>
+            <VectorBarcodeSvg
+              code={project.barcodeNumber || project.catalogNumber}
+              x={0}
+              y={0}
+              width={28}
+              height={14.5}
+              color="#18181B"
+              bgColor="#FFFFFF"
+            />
+          </g>
+        ) : (
+          <g transform={`translate(${flapX + 13}, 96.5) rotate(-90)`}>
+            <text
+              x={0}
+              y={-3}
+              fill={paper.subTextHex}
+              fontFamily="Inter, Helvetica, sans-serif"
+              fontWeight="600"
+              fontSize="1.35"
+            >
+              {truncate(project.countryText, 36)}
+            </text>
+            <text
+              x={0}
+              y={0}
+              fill={paper.subTextHex}
+              fontFamily="Inter, Helvetica, sans-serif"
+              fontSize="1.2"
+            >
+              {truncate(project.legalText, 42)}
+            </text>
+          </g>
+        )}
       </g>
     );
   };
 
   // Inner Fold-Out Panel J+1 (65 x 102 mm)
   const renderExtraPanel1 = () => {
+    const maxTracksPerSide = Math.max(sideATracks.length, sideBTracks.length, 8);
+    const isDense = maxTracksPerSide > 8;
+    const rowStep = isDense ? 2.65 : 3.4;
+    const trackFontSize = isDense ? '1.68' : '1.95';
+
     const renderTrackSection = (
       title: string,
       tracks: Track[],
@@ -1335,7 +2027,7 @@ export const JCardSvgRenderer: React.FC<JCardSvgRendererProps> = ({
           fill={project.accentColor}
           fontFamily="Inter, Helvetica, sans-serif"
           fontWeight="800"
-          fontSize="2.0"
+          fontSize="1.95"
           letterSpacing="0.2"
         >
           {title}
@@ -1347,14 +2039,19 @@ export const JCardSvgRenderer: React.FC<JCardSvgRendererProps> = ({
           fill={paper.subTextHex}
           fontFamily="JetBrains Mono, monospace"
           fontWeight="600"
-          fontSize="1.8"
+          fontSize="1.75"
         >
           {formatDuration(totalSec)}
         </text>
-        <line x1={0} y1={4.0} x2={53} y2={4.0} stroke={project.accentColor} strokeWidth="0.3" />
+        <line x1={0} y1={3.8} x2={53} y2={3.8} stroke={project.accentColor} strokeWidth="0.3" />
 
-        {tracks.slice(0, 8).map((t, idx) => {
-          const yPos = 7.4 + idx * 3.5;
+        {tracks.slice(0, 11).map((t, idx) => {
+          const yPos = 6.8 + idx * rowStep;
+          const hasArtist =
+            t.artist &&
+            t.artist.trim() !== '' &&
+            t.artist.toLowerCase() !== project.albumArtist.toLowerCase();
+          const lineLabel = hasArtist ? `${t.title} - ${t.artist}` : t.title;
           return (
             <g key={t.id}>
               <text
@@ -1362,19 +2059,19 @@ export const JCardSvgRenderer: React.FC<JCardSvgRendererProps> = ({
                 y={yPos}
                 fill={paper.subTextHex}
                 fontFamily="JetBrains Mono, monospace"
-                fontSize="1.75"
+                fontSize="1.6"
               >
                 {String(idx + 1).padStart(2, '0')}
               </text>
               <text
-                x={4.8}
+                x={4.5}
                 y={yPos}
                 fill={paper.textHex}
                 fontFamily={fontFamily}
                 fontWeight="600"
-                fontSize="1.95"
+                fontSize={trackFontSize}
               >
-                {truncate(t.title, 26)}
+                {truncate(lineLabel, 30)}
               </text>
               <text
                 x={53}
@@ -1382,7 +2079,7 @@ export const JCardSvgRenderer: React.FC<JCardSvgRendererProps> = ({
                 textAnchor="end"
                 fill={paper.subTextHex}
                 fontFamily="JetBrains Mono, monospace"
-                fontSize="1.75"
+                fontSize="1.6"
               >
                 {formatDuration(t.durationSec)}
               </text>
