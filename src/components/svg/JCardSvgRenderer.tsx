@@ -219,195 +219,404 @@ export const JCardSvgRenderer: React.FC<JCardSvgRendererProps> = ({
 
     switch (project.templateId) {
       case 'awesome-mix-quill': {
-        // Plantilla Awesome Mix Vol. 1 & Vol. 2 (Peter Quill / Star-Lord)
-        // Papel marfil envejecido de los 70, cartela pautada superior con "AWESOME MIX VOL. 1" en rotulador negro,
-        // franjas retro horizontales (ámbar, naranja quemado, rojo carmesí y carbón) e índice manuscrito en portada.
-        const isHw = project.typography === 'handwritten-pen';
-        const padX = frontX + 4.5;
-        const innerW = frontW - 9; // 56 mm
+        // Plantilla Awesome Mix Vol. 1 (Réplica exacta de las fotos de referencia)
+        // Mitad superior: Ventana de cassette con etiqueta blanca/franjas rojas progresivas y "AWESOME MIX VOL. 1" en rotulador azul + banda negra con logo y código de barras.
+        // Mitad inferior: Tarjeta beige a 2 columnas [A] y [B] con DATE / NOISE REDUCTION ☐ y tracklist manuscrito continuo separado por barras "/".
+        const wrapSlashTracks = (tracks: Track[], maxCharsPerLine: number, maxLines: number): string[] => {
+          const fullText = tracks
+            .map((t) => {
+              const title = t.title.toUpperCase();
+              const artist = t.artist ? ` - ${t.artist.toUpperCase()}` : '';
+              return `${title}${artist}`;
+            })
+            .join(' / ');
+
+          if (!fullText) return [];
+          const tokens = fullText.split(' ');
+          const lines: string[] = [];
+          let current = '';
+
+          for (const token of tokens) {
+            const candidate = current ? `${current} ${token}` : token;
+            if (candidate.length <= maxCharsPerLine) {
+              current = candidate;
+            } else {
+              if (current) lines.push(current);
+              current = token;
+              if (lines.length >= maxLines - 1) break;
+            }
+          }
+          if (current && lines.length < maxLines) {
+            lines.push(current);
+          }
+          return lines;
+        };
+
+        const colALines = wrapSlashTracks(sideATracks, 24, 10);
+        const colBLines = wrapSlashTracks(sideBTracks, 24, 10);
+        const colW = 28.6;
+        const colAX = frontX + 2.6;
+        const colBX = frontX + 33.8;
+
+        const renderIndexColumn = (
+          sideLetter: 'A' | 'B',
+          colX: number,
+          wrappedLines: string[]
+        ) => (
+          <g transform={`translate(${colX}, 49.3)`}>
+            {/* Caja cuadrada marrón [A] o [B] */}
+            <rect x={0} y={0} width={4.5} height={4.5} fill="#6B5E4F" />
+            <text
+              x={2.25}
+              y={3.55}
+              textAnchor="middle"
+              fill="#EAE2D3"
+              fontFamily="Inter, Helvetica, Arial, sans-serif"
+              fontWeight="800"
+              fontSize="3.4"
+            >
+              {sideLetter}
+            </text>
+
+            {/* DATE + línea fina */}
+            <text
+              x={5.4}
+              y={1.65}
+              fill="#5A4E40"
+              fontFamily="Inter, Helvetica, Arial, sans-serif"
+              fontWeight="700"
+              fontSize="1.35"
+              letterSpacing="0.16"
+            >
+              DATE
+            </text>
+            <line x1={5.4} y1={2.15} x2={colW} y2={2.15} stroke="#786B5C" strokeWidth="0.22" />
+
+            {/* NOISE REDUCTION + casilla ☐ */}
+            <text
+              x={5.4}
+              y={4.1}
+              fill="#5A4E40"
+              fontFamily="Inter, Helvetica, Arial, sans-serif"
+              fontWeight="700"
+              fontSize="1.35"
+              letterSpacing="0.12"
+            >
+              NOISE REDUCTION
+            </text>
+            <rect
+              x={21.8}
+              y={2.75}
+              width={1.55}
+              height={1.55}
+              fill="none"
+              stroke="#5A4E40"
+              strokeWidth="0.24"
+            />
+            {project.dolbySystem !== 'NONE' && (
+              <path
+                d="M 22.0 3.5 L 22.5 4.0 L 23.2 2.9"
+                fill="none"
+                stroke="#253551"
+                strokeWidth="0.3"
+              />
+            )}
+
+            {/* Barra gruesa marrón oscuro bajo cabecera */}
+            <rect x={0} y={5.2} width={colW} height={0.68} fill="#4A3F34" />
+
+            {/* 11 renglones pautados con el tracklist manuscrito continuo con "/" */}
+            {Array.from({ length: 11 }).map((_, idx) => {
+              const lineY = 9.3 + idx * 4.05;
+              const textLine = wrappedLines[idx];
+              return (
+                <g key={`am-col-${sideLetter}-${idx}`}>
+                  <line
+                    x1={0}
+                    y1={lineY}
+                    x2={colW}
+                    y2={lineY}
+                    stroke="#7D7061"
+                    strokeWidth="0.24"
+                  />
+                  {textLine && (
+                    <text
+                      x={0.2}
+                      y={lineY - 0.8}
+                      fill="#233554"
+                      fontFamily="'Architects Daughter', 'Caveat', cursive"
+                      fontWeight="700"
+                      fontSize="1.82"
+                      letterSpacing="0.02"
+                    >
+                      {textLine}
+                    </text>
+                  )}
+                </g>
+              );
+            })}
+          </g>
+        );
+
+        // Dividir el artista/título de la banda central para estilo GUARDIANS OF THE GALAXY
+        const artistUpper = (project.albumArtist || 'GUARDIANS OF THE GALAXY').toUpperCase();
+        const isGuardians = artistUpper.includes('GUARDIANS');
 
         return (
           <g>
-            {/* Fondo marfil cálido años 70 */}
-            <rect x={frontX} y={0} width={frontW} height={cardH} fill={paper.bgHex} />
+            {/* 1. ZONA SUPERIOR (0 a 28.5 mm): Ventana con el cassette Awesome Mix Vol. 1 */}
+            <rect x={frontX} y={0} width={frontW} height={28.5} fill="#1E1E22" />
 
-            {/* Cartela pautada superior estilo etiqueta de cinta virgen 1974 */}
-            <rect
-              x={padX}
-              y={5}
-              width={innerW}
-              height={16.5}
-              rx={1.2}
-              fill="#FAF5E8"
-              stroke="#18181B"
+            {/* Etiqueta achaflanada dentro de la ventana superior */}
+            <g transform={`translate(${frontX + 4.5}, 2.2)`}>
+              <polygon
+                points="3.8,0 52.2,0 56,3.8 56,24.2 0,24.2 0,3.8"
+                fill="#EFECE4"
+              />
+              {/* Título manuscrito en rotulador azul sobre la ventana del cassette */}
+              <text
+                x={28}
+                y={8.8}
+                textAnchor="middle"
+                fill="#24477F"
+                fontFamily="'Permanent Marker', 'Architects Daughter', 'Caveat', cursive"
+                fontWeight="700"
+                fontSize="3.25"
+                letterSpacing="0.28"
+              >
+                {truncate(project.albumTitle.toUpperCase(), 26)}
+              </text>
+
+              {/* 7 Franjas rojas progresivas a ambos lados de la ventana central */}
+              <rect x={0} y={10.2} width={56} height={0.32} fill="#D43B30" />
+              <rect x={0} y={12.3} width={56} height={0.55} fill="#D43B30" />
+              <rect x={0} y={14.5} width={56} height={0.85} fill="#D43B30" />
+              <rect x={0} y={16.9} width={56} height={1.25} fill="#D43B30" />
+              <rect x={0} y={19.4} width={56} height={1.75} fill="#D43B30" />
+              <rect x={0} y={22.0} width={56} height={2.2} fill="#D43B30" />
+
+              {/* Ventana central negra con las dos bobinas del cassette */}
+              <rect
+                x={11.5}
+                y={10.0}
+                width={33}
+                height={14.2}
+                fill="#18181B"
+                stroke="#27272A"
+                strokeWidth="0.35"
+              />
+              {[17.2, 38.8].map((rcx, rIdx) => (
+                <g key={rIdx}>
+                  <circle
+                    cx={rcx}
+                    cy={17.1}
+                    r={4.2}
+                    fill="#111113"
+                    stroke="#71717A"
+                    strokeWidth="0.55"
+                  />
+                  <circle
+                    cx={rcx}
+                    cy={17.1}
+                    r={2.8}
+                    fill="none"
+                    stroke="#D4D4D8"
+                    strokeWidth="0.45"
+                  />
+                  {[0, 120, 240].map((ang) => (
+                    <line
+                      key={ang}
+                      x1={rcx}
+                      y1={17.1 - 0.6}
+                      x2={rcx}
+                      y2={17.1 - 3.6}
+                      stroke="#E4E4E7"
+                      strokeWidth="0.85"
+                      transform={`rotate(${ang} ${rcx} 17.1)`}
+                    />
+                  ))}
+                </g>
+              ))}
+            </g>
+
+            {/* 2. ZONA CENTRAL (28.5 a 47.2 mm): Banda negra con logo estilo Guardians + Código de barras */}
+            <rect x={frontX} y={28.5} width={frontW} height={18.7} fill="#22201E" />
+
+            {/* Bloque izquierdo: Insignia roja + Tipografía apilada */}
+            <g transform={`translate(${frontX + 3.2}, 29.8)`}>
+              <rect x={11.5} y={0} width={5.4} height={1.7} fill="#D43B30" />
+              <text
+                x={14.2}
+                y={1.3}
+                textAnchor="middle"
+                fill="#FFFFFF"
+                fontFamily="'Oswald', Impact, sans-serif"
+                fontWeight="900"
+                fontSize="1.15"
+                letterSpacing="0.06"
+              >
+                {truncate(project.recordLabel.split('/')[0].trim().toUpperCase() || 'MARVEL', 8)}
+              </text>
+
+              {isGuardians ? (
+                <>
+                  <text
+                    x={14.2}
+                    y={5.1}
+                    textAnchor="middle"
+                    fill="#F4F4F5"
+                    fontFamily="'Oswald', 'Barlow Condensed', Impact, sans-serif"
+                    fontWeight="900"
+                    fontSize="3.9"
+                    letterSpacing="0.08"
+                  >
+                    GUARDIANS
+                  </text>
+                  <text
+                    x={4.0}
+                    y={6.8}
+                    fill="#F4F4F5"
+                    fontFamily="'Oswald', Impact, sans-serif"
+                    fontWeight="800"
+                    fontSize="1.4"
+                  >
+                    OF
+                  </text>
+                  <text
+                    x={3.6}
+                    y={8.4}
+                    fill="#F4F4F5"
+                    fontFamily="'Oswald', Impact, sans-serif"
+                    fontWeight="800"
+                    fontSize="1.4"
+                  >
+                    THE
+                  </text>
+                  <text
+                    x={7.0}
+                    y={8.5}
+                    fill="#F4F4F5"
+                    fontFamily="'Oswald', 'Barlow Condensed', Impact, sans-serif"
+                    fontWeight="900"
+                    fontSize="3.8"
+                    letterSpacing="0.08"
+                  >
+                    GALAXY
+                  </text>
+                </>
+              ) : (
+                <>
+                  <text
+                    x={14.2}
+                    y={5.3}
+                    textAnchor="middle"
+                    fill="#F4F4F5"
+                    fontFamily="'Oswald', 'Barlow Condensed', Impact, sans-serif"
+                    fontWeight="900"
+                    fontSize="3.2"
+                    letterSpacing="0.08"
+                  >
+                    {truncate(artistUpper, 16)}
+                  </text>
+                  <text
+                    x={14.2}
+                    y={8.5}
+                    textAnchor="middle"
+                    fill="#F4F4F5"
+                    fontFamily="'Oswald', 'Barlow Condensed', Impact, sans-serif"
+                    fontWeight="800"
+                    fontSize="2.5"
+                    letterSpacing="0.08"
+                  >
+                    {truncate(project.albumTitle.toUpperCase(), 18)}
+                  </text>
+                </>
+              )}
+
+              <text
+                x={14.2}
+                y={10.2}
+                textAnchor="middle"
+                fill="#E4E4E7"
+                fontFamily="'Barlow Condensed', Inter, sans-serif"
+                fontWeight="800"
+                fontSize="1.18"
+                letterSpacing="0.08"
+              >
+                ORIGINAL MOTION PICTURE SOUNDTRACK
+              </text>
+            </g>
+
+            {/* Bloque derecho: Código de barras UPC blanco */}
+            <VectorBarcodeSvg
+              code={project.barcodeNumber || '050087316792'}
+              x={frontX + 34.2}
+              y={30.8}
+              width={27.5}
+              height={9.2}
+              color="#18181B"
+              bgColor="#FFFFFF"
+            />
+
+            {/* Filete rojo fino horizontal y micro-texto de copyright debajo */}
+            <line
+              x1={frontX + 2}
+              y1={41.6}
+              x2={frontX + frontW - 2}
+              y2={41.6}
+              stroke="#D43B30"
+              strokeWidth="0.4"
+            />
+            <text
+              x={frontX + frontW / 2}
+              y={43.2}
+              textAnchor="middle"
+              fill="#D6D3D1"
+              fontFamily="Inter, Helvetica, Arial, sans-serif"
+              fontWeight="600"
+              fontSize="0.82"
+              letterSpacing="0.04"
+            >
+              © {project.releaseYear} MARVEL THIS COMPILATION ℗ {project.releaseYear} MARVEL MUSIC, INC. MANUFACTURED AND MARKETED BY
+            </text>
+            <text
+              x={frontX + frontW / 2}
+              y={44.5}
+              textAnchor="middle"
+              fill="#D6D3D1"
+              fontFamily="Inter, Helvetica, Arial, sans-serif"
+              fontWeight="600"
+              fontSize="0.82"
+              letterSpacing="0.04"
+            >
+              HOLLYWOOD RECORDS, 500 S. BUENA VISTA ST., BURBANK, CA 91521. ALL RIGHTS RESERVED. UNAUTHORIZED COPYING,
+            </text>
+            <text
+              x={frontX + frontW / 2}
+              y={45.8}
+              textAnchor="middle"
+              fill="#D6D3D1"
+              fontFamily="Inter, Helvetica, Arial, sans-serif"
+              fontWeight="600"
+              fontSize="0.82"
+              letterSpacing="0.04"
+            >
+              REPRODUCTION, HIRING, LENDING, PUBLIC PERFORMANCE AND BROADCASTING PROHIBITED. {project.catalogNumber}
+            </text>
+
+            {/* 3. ZONA INFERIOR (47.2 a 102 mm): Tarjeta beige pautada a 2 columnas [A] y [B] */}
+            <rect x={frontX} y={47.2} width={frontW} height={54.8} fill="#E2D8C5" />
+            <line
+              x1={frontX}
+              y1={47.4}
+              x2={frontX + frontW}
+              y2={47.4}
+              stroke="#9CA3AF"
               strokeWidth="0.45"
             />
-            <line
-              x1={padX + 2.5}
-              y1={12.5}
-              x2={padX + innerW - 2.5}
-              y2={12.5}
-              stroke="#A8A29E"
-              strokeWidth="0.22"
-            />
-            <line
-              x1={padX + 2.5}
-              y1={18.2}
-              x2={padX + innerW - 2.5}
-              y2={18.2}
-              stroke="#A8A29E"
-              strokeWidth="0.22"
-            />
 
-            {/* Título en rotulador negro grueso ("AWESOME MIX VOL. 1") */}
-            <text
-              x={frontX + frontW / 2}
-              y={isHw ? 11.8 : 11.2}
-              textAnchor="middle"
-              fill="#18181B"
-              fontFamily={fontFamily}
-              fontWeight="800"
-              fontSize={isHw ? '6.2' : '4.2'}
-              letterSpacing={isHw ? '0.08' : '0.2'}
-            >
-              {truncate(project.albumTitle, 24)}
-            </text>
-            <text
-              x={frontX + frontW / 2}
-              y={isHw ? 17.5 : 17.0}
-              textAnchor="middle"
-              fill="#44403C"
-              fontFamily={fontFamily}
-              fontWeight="700"
-              fontSize={isHw ? '3.4' : '2.3'}
-            >
-              {truncate(project.albumArtist, 30)}
-            </text>
-
-            {/* Las 4 Franjas Horizontales Icónicas años 70 (Ámbar, Naranja Quemado, Rojo Carmesí y Negro) */}
-            <g transform="translate(0, 24)">
-              <rect x={frontX} y={0} width={frontW} height={3.6} fill="#FAA307" />
-              <rect x={frontX} y={3.6} width={frontW} height={4.4} fill={project.accentColor} />
-              <rect x={frontX} y={8.0} width={frontW} height={4.8} fill={project.secondaryColor} />
-              <rect x={frontX} y={12.8} width={frontW} height={2.6} fill="#18181B" />
-
-              {/* Insignia lateral "60" / "90" estilo Supertape sobre las franjas */}
-              <rect
-                x={frontX + frontW - 15.5}
-                y={1.6}
-                width={11}
-                height={11.5}
-                rx={1.2}
-                fill="#FAF5E8"
-                stroke="#18181B"
-                strokeWidth="0.45"
-              />
-              <text
-                x={frontX + frontW - 10}
-                y={8.4}
-                textAnchor="middle"
-                fill="#18181B"
-                fontFamily="Inter, Helvetica, Arial, sans-serif"
-                fontWeight="900"
-                fontSize="5.2"
-              >
-                {project.tapeCapacity.replace('C-', '')}
-              </text>
-              <text
-                x={frontX + frontW - 10}
-                y={11.6}
-                textAnchor="middle"
-                fill={project.secondaryColor}
-                fontFamily="Inter, Helvetica, Arial, sans-serif"
-                fontWeight="800"
-                fontSize="1.45"
-              >
-                MIN
-              </text>
-
-              <text
-                x={padX + 1}
-                y={14.6}
-                fill="#FAF5E8"
-                fontFamily="Inter, Helvetica, Arial, sans-serif"
-                fontWeight="800"
-                fontSize="1.65"
-                letterSpacing="0.25"
-              >
-                {project.stereoText.toUpperCase()}
-              </text>
-            </g>
-
-            {/* Renglones pautados con el Tracklist manuscrito de Awesome Mix en portada */}
-            <g transform={`translate(${padX}, 43.5)`}>
-              {project.tracks.slice(0, 10).map((t, idx) => {
-                const rowY = idx * 4.75;
-                const hasArtist =
-                  t.artist &&
-                  t.artist.trim() !== '' &&
-                  t.artist.toLowerCase() !== project.albumArtist.toLowerCase();
-                const lineText = hasArtist ? `${t.title} — ${t.artist}` : t.title;
-                return (
-                  <g key={t.id}>
-                    <line
-                      x1={0}
-                      y1={rowY + 3.6}
-                      x2={innerW}
-                      y2={rowY + 3.6}
-                      stroke="#78716C"
-                      strokeWidth="0.18"
-                      opacity="0.45"
-                    />
-                    <text
-                      x={0}
-                      y={rowY + 2.8}
-                      fill={project.secondaryColor}
-                      fontFamily="Inter, Helvetica, sans-serif"
-                      fontWeight="800"
-                      fontSize="1.8"
-                    >
-                      {t.side}
-                      {idx + 1}
-                    </text>
-                    <text
-                      x={5.2}
-                      y={rowY + 2.9}
-                      fill={paper.textHex}
-                      fontFamily={fontFamily}
-                      fontWeight="700"
-                      fontSize={isHw ? '3.25' : '2.15'}
-                    >
-                      {truncate(lineText, 27)}
-                    </text>
-                    <text
-                      x={innerW}
-                      y={rowY + 2.8}
-                      textAnchor="end"
-                      fill={paper.subTextHex}
-                      fontFamily="JetBrains Mono, monospace"
-                      fontSize="1.65"
-                    >
-                      {formatDuration(t.durationSec)}
-                    </text>
-                  </g>
-                );
-              })}
-            </g>
-
-            {/* Pie técnico años 70 */}
-            <rect x={frontX} y={95.5} width={frontW} height={6.5} fill="#18181B" />
-            <text
-              x={frontX + frontW / 2}
-              y={99.6}
-              textAnchor="middle"
-              fill="#FAA307"
-              fontFamily="Inter, Helvetica, Arial, sans-serif"
-              fontWeight="800"
-              fontSize="1.85"
-              letterSpacing="0.3"
-            >
-              {project.recordLabel.toUpperCase()} • {project.catalogNumber}
-            </text>
+            {renderIndexColumn('A', colAX, colALines)}
+            {renderIndexColumn('B', colBX, colBLines)}
           </g>
         );
       }
@@ -1751,71 +1960,30 @@ export const JCardSvgRenderer: React.FC<JCardSvgRendererProps> = ({
     }
 
     if (project.templateId === 'awesome-mix-quill') {
-      const spineCenterX = spineX + spineW / 2;
-      const isHw = project.typography === 'handwritten-pen';
+      // Lomo réplica exacta de la Imagen 3: fondo crema con logotipo ❖ TDK en negro y "AWESOME MIX VOL. 1" en rotulador azul.
       return (
-        <g>
-          <rect x={spineX} y={0} width={spineW} height={cardH} fill={paper.bgHex} />
+        <g transform={`translate(${spineX + spineW}, 0) rotate(90)`}>
+          <rect x={0} y={0} width={cardH} height={spineW} fill="#F2EFE6" />
+          <line x1={0} y1={0} x2={cardH} y2={0} stroke="#18181B" strokeWidth="0.45" />
+          <line x1={0} y1={spineW} x2={cardH} y2={spineW} stroke="#18181B" strokeWidth="0.45" />
 
-          {/* Franjas superiores años 70 en el lomo */}
-          <rect x={spineX} y={0} width={spineW} height={5} fill="#18181B" />
-          <rect x={spineX} y={5} width={spineW} height={3.5} fill="#FAA307" />
-          <rect x={spineX} y={8.5} width={spineW} height={4} fill={project.accentColor} />
-          <rect x={spineX} y={12.5} width={spineW} height={4.5} fill={project.secondaryColor} />
-
-          {/* Insignia 60 / 90 en la parte superior del lomo */}
-          <rect
-            x={spineX + 1.8}
-            y={19.5}
-            width={spineW - 3.6}
-            height={7.5}
-            rx={1}
-            fill="#FAF5E8"
-            stroke="#18181B"
-            strokeWidth="0.35"
-          />
-          <text
-            x={spineCenterX}
-            y={24.8}
-            textAnchor="middle"
-            fill="#18181B"
-            fontFamily="Inter, Helvetica, Arial, sans-serif"
-            fontWeight="900"
-            fontSize="3.8"
-          >
-            {project.tapeCapacity.replace('C-', '')}
-          </text>
-
-          {/* Título en rotulador manuscrito a lo largo del lomo */}
-          <g transform={`translate(${spineCenterX + (isHw ? 1.2 : 0.6)}, 58) rotate(-90)`}>
-            <text
-              x={0}
-              y={0}
-              textAnchor="middle"
-              fill="#18181B"
-              fontFamily={fontFamily}
-              fontWeight="800"
-              fontSize={isHw ? '5.4' : '3.4'}
-              letterSpacing="0.14"
-            >
-              {truncate(project.albumTitle, 26)}
-            </text>
+          {/* Logotipo vertical ❖ TDK a la izquierda del lomo (como en la Imagen 3) */}
+          <g transform="translate(2.5, 11.4) rotate(-90)">
+            <TdkLogoVector x={0} y={0} width={10.2} height={2.4} color="#18181B" />
           </g>
 
-          {/* Franjas inferiores años 70 en el lomo */}
-          <rect x={spineX} y={87.5} width={spineW} height={4} fill={project.secondaryColor} />
-          <rect x={spineX} y={91.5} width={spineW} height={4} fill={project.accentColor} />
-          <rect x={spineX} y={95.5} width={spineW} height={6.5} fill="#18181B" />
+          {/* Título escrito a rotulador azul en el centro del lomo */}
           <text
-            x={spineCenterX}
-            y={99.6}
+            x={48}
+            y={8.6}
             textAnchor="middle"
-            fill="#FAA307"
-            fontFamily="Inter, Helvetica, Arial, sans-serif"
-            fontWeight="900"
-            fontSize="1.65"
+            fill="#24477F"
+            fontFamily="'Permanent Marker', 'Architects Daughter', 'Caveat', cursive"
+            fontWeight="700"
+            fontSize="6.4"
+            letterSpacing="0.35"
           >
-            {truncate(project.catalogNumber, 8)}
+            {truncate(project.albumTitle.toUpperCase(), 24)}
           </text>
         </g>
       );
@@ -2164,6 +2332,30 @@ export const JCardSvgRenderer: React.FC<JCardSvgRendererProps> = ({
       );
     }
 
+    if (project.templateId === 'awesome-mix-quill') {
+      // Solapa trasera réplica exacta de la Imagen 3:
+      // Banda crema junto al pliegue con logotipo ❖ TDK invertido en la esquina derecha + 7 franjas rojas progresivas (de fina a gruesa).
+      return (
+        <g transform={`translate(${flapX + flapW}, 0) rotate(90)`}>
+          <rect x={0} y={0} width={cardH} height={flapW} fill="#F2EFE6" />
+
+          {/* Logotipo ❖ TDK invertido en la franja superior derecha de la solapa (tal como aparece en la Imagen 3) */}
+          <g transform={`translate(${cardH - 3.5}, 4.8) rotate(180)`}>
+            <TdkLogoVector x={0} y={0} width={17.5} height={3.8} color="#18181B" />
+          </g>
+
+          {/* 7 Franjas rojas progresivas de fina a gruesa hacia el borde exterior de la solapa */}
+          <rect x={0} y={6.2} width={cardH} height={0.35} fill="#D43B30" />
+          <rect x={0} y={7.7} width={cardH} height={0.55} fill="#D43B30" />
+          <rect x={0} y={9.3} width={cardH} height={0.85} fill="#D43B30" />
+          <rect x={0} y={11.1} width={cardH} height={1.20} fill="#D43B30" />
+          <rect x={0} y={13.1} width={cardH} height={1.60} fill="#D43B30" />
+          <rect x={0} y={15.4} width={cardH} height={2.15} fill="#D43B30" />
+          <rect x={0} y={18.0} width={cardH} height={1.0} fill="#D43B30" />
+        </g>
+      );
+    }
+
     return (
       <g>
         <rect x={flapX} y={0} width={flapW} height={cardH} fill={paper.bgHex} />
@@ -2274,6 +2466,133 @@ export const JCardSvgRenderer: React.FC<JCardSvgRendererProps> = ({
 
   // Inner Fold-Out Panel J+1 (65 x 102 mm)
   const renderExtraPanel1 = () => {
+    if (project.templateId === 'awesome-mix-quill') {
+      // Réplica exacta de la hoja interior apaisada TDK de la Imagen 3:
+      // Dos columnas con círculos negros (A) "side A" y (B) "side B", y cada canción en 2 renglones:
+      // 1. "HOOKED ON A FEELING" / PERFORMED BY BLUE SWEDE en bolígrafo azul.
+      const headerH = 8.5;
+      const rowCount = 12;
+      const rowH = (panelW - headerH) / rowCount;
+
+      const buildQuillLines = (tracks: Track[], startNum: number) => {
+        const lines: { text: string; isArtist?: boolean }[] = [];
+        tracks.slice(0, 6).forEach((t, idx) => {
+          lines.push({
+            text: `${startNum + idx}. "${truncate(t.title.toUpperCase(), 23)}"`,
+            isArtist: false,
+          });
+          lines.push({
+            text: `PERFORMED BY ${truncate((t.artist || project.albumArtist).toUpperCase(), 21)}`,
+            isArtist: true,
+          });
+        });
+        return lines;
+      };
+
+      const colALines = buildQuillLines(sideATracks, 1);
+      const colBLines = buildQuillLines(sideBTracks, sideATracks.slice(0, 6).length + 1);
+
+      return (
+        <g transform={`translate(${panel1X + panelW}, 0) rotate(90)`}>
+          <rect x={0} y={0} width={cardH} height={panelW} fill="#F2EFE6" />
+          <rect x={0} y={0} width={cardH} height={headerH} fill="#DFDDD4" />
+
+          {/* Cabecera Columna A: círculo negro (A) + "side A" manuscrito */}
+          <circle cx={6.2} cy={4.25} r={2.8} fill="#18181B" />
+          <text
+            x={6.2}
+            y={5.4}
+            textAnchor="middle"
+            fill="#FFFFFF"
+            fontFamily="Inter, Helvetica, Arial, sans-serif"
+            fontWeight="900"
+            fontSize="3.4"
+          >
+            A
+          </text>
+          <text
+            x={16.5}
+            y={6.0}
+            fill="#24477F"
+            fontFamily="'Architects Daughter', 'Caveat', cursive"
+            fontWeight="700"
+            fontSize="4.2"
+          >
+            side A
+          </text>
+
+          {/* Cabecera Columna B: círculo negro (B) + "side B" manuscrito */}
+          <circle cx={56.2} cy={4.25} r={2.8} fill="#18181B" />
+          <text
+            x={56.2}
+            y={5.4}
+            textAnchor="middle"
+            fill="#FFFFFF"
+            fontFamily="Inter, Helvetica, Arial, sans-serif"
+            fontWeight="900"
+            fontSize="3.4"
+          >
+            B
+          </text>
+          <text
+            x={66.5}
+            y={6.0}
+            fill="#24477F"
+            fontFamily="'Architects Daughter', 'Caveat', cursive"
+            fontWeight="700"
+            fontSize="4.2"
+          >
+            side B
+          </text>
+
+          <line x1={0} y1={headerH} x2={cardH} y2={headerH} stroke="#18181B" strokeWidth="0.45" />
+
+          {Array.from({ length: rowCount }).map((_, rIdx) => {
+            const rowBottom = headerH + (rIdx + 1) * rowH;
+            const leftLine = colALines[rIdx];
+            const rightLine = colBLines[rIdx];
+            return (
+              <g key={`quill-j1-row-${rIdx}`}>
+                <line
+                  x1={3.0}
+                  y1={rowBottom}
+                  x2={cardH - 3.0}
+                  y2={rowBottom}
+                  stroke="#71717A"
+                  strokeWidth="0.22"
+                  strokeDasharray="0.55 0.7"
+                />
+                {leftLine && (
+                  <text
+                    x={leftLine.isArtist ? 6.2 : 3.6}
+                    y={rowBottom - 1.0}
+                    fill="#24477F"
+                    fontFamily="'Architects Daughter', 'Caveat', cursive"
+                    fontWeight="700"
+                    fontSize={leftLine.isArtist ? '2.05' : '2.35'}
+                  >
+                    {leftLine.text}
+                  </text>
+                )}
+                {rightLine && (
+                  <text
+                    x={rightLine.isArtist ? 56.2 : 53.6}
+                    y={rowBottom - 1.0}
+                    fill="#24477F"
+                    fontFamily="'Architects Daughter', 'Caveat', cursive"
+                    fontWeight="700"
+                    fontSize={rightLine.isArtist ? '2.05' : '2.35'}
+                  >
+                    {rightLine.text}
+                  </text>
+                )}
+              </g>
+            );
+          })}
+        </g>
+      );
+    }
+
     const maxTracksPerSide = Math.max(sideATracks.length, sideBTracks.length, 8);
     const isDense = maxTracksPerSide > 8;
     const rowStep = isDense ? 2.65 : 3.4;

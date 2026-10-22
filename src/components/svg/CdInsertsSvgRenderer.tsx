@@ -350,132 +350,150 @@ export const CdInsertsSvgRenderer: React.FC<CdInsertsSvgRendererProps> = ({
               {renderCoverArt(8, 40, frontW - 16, 72, `${idPrefix}-cd-dg-art`)}
             </g>
           ) : project.templateId === 'awesome-mix-quill' ? (
-            // Peter Quill's "Awesome Mix Vol. 1 & 2" CD Front Booklet (120 x 120 mm)
+            // Peter Quill's "Awesome Mix Vol. 1" CD Front Booklet (120 x 120 mm)
             <g>
-              <rect x={0} y={0} width={frontW} height={frontH} fill="#F4EAD2" />
-              <rect
-                x={3}
-                y={3}
-                width={frontW - 6}
-                height={frontH - 6}
-                rx="3"
-                fill="#FAF4E4"
-                stroke="#18181B"
-                strokeWidth="0.6"
-              />
-              {/* Top Lined Header Cartouche */}
-              {[10, 16, 22, 28].map((ly) => (
-                <line
-                  key={`cd-am-line-${ly}`}
-                  x1={7}
-                  y1={ly}
-                  x2={frontW - 7}
-                  y2={ly}
-                  stroke="#B8AA91"
-                  strokeWidth="0.22"
-                />
-              ))}
+              <rect x={0} y={0} width={frontW} height={42} fill="#F2EFE6" />
+              {/* Blue Marker Title Above Graduated Red Stripes */}
               <text
                 x={frontW / 2}
-                y={19.5}
+                y={14.5}
                 textAnchor="middle"
-                fill="#111111"
-                fontFamily="'Caveat', cursive, sans-serif"
+                fill="#24477F"
+                fontFamily="'Permanent Marker', 'Architects Daughter', 'Caveat', cursive"
                 fontWeight="700"
-                fontSize="10.2"
-                letterSpacing="0.25"
-                transform={`rotate(-1.2, ${frontW / 2}, 19.5)`}
+                fontSize="7.4"
+                letterSpacing="0.45"
               >
                 {truncate(project.albumTitle.toUpperCase(), 24)}
               </text>
+              {/* 7 Graduated Red Stripes */}
+              <rect x={0} y={18.5} width={frontW} height={0.55} fill="#D43B30" />
+              <rect x={0} y={21.8} width={frontW} height={0.95} fill="#D43B30" />
+              <rect x={0} y={25.2} width={frontW} height={1.45} fill="#D43B30" />
+              <rect x={0} y={28.8} width={frontW} height={2.1} fill="#D43B30" />
+              <rect x={0} y={32.6} width={frontW} height={2.9} fill="#D43B30" />
+              <rect x={0} y={36.8} width={frontW} height={5.2} fill="#D43B30" />
+
+              {/* Middle Black Guardians Soundtrack Bar with Barcode */}
+              <rect x={0} y={42} width={frontW} height={22} fill="#22201E" />
+              <rect x={24} y={44} width={9.5} height={2.8} fill="#D43B30" />
               <text
-                x={frontW / 2}
-                y={26.5}
+                x={28.75}
+                y={46.1}
                 textAnchor="middle"
-                fill="#78350F"
-                fontFamily="'Caveat', cursive, sans-serif"
-                fontWeight="700"
-                fontSize="4.6"
-              >
-                {truncate(project.albumArtist, 32)}
-              </text>
-
-              {/* 1970s Sunset Stripes Band */}
-              <rect x={3.3} y={32} width={frontW - 6.6} height={4.2} fill="#F59E0B" />
-              <rect x={3.3} y={36.2} width={frontW - 6.6} height={4.2} fill="#EA580C" />
-              <rect x={3.3} y={40.4} width={frontW - 6.6} height={4.8} fill="#B91C1C" />
-              <rect x={3.3} y={45.2} width={frontW - 6.6} height={8.5} fill="#18181B" />
-              <text
-                x={10}
-                y={50.9}
-                fill="#FDE68A"
-                fontFamily="Inter, Helvetica, Arial, sans-serif"
+                fill="#FFFFFF"
+                fontFamily="'Oswald', Impact, sans-serif"
                 fontWeight="900"
-                fontSize="3.4"
-                letterSpacing="0.35"
+                fontSize="2.0"
               >
-                MEREDITH QUILL • COMPACT DISC MIX
+                {truncate(project.recordLabel.split('/')[0].trim().toUpperCase() || 'MARVEL', 8)}
               </text>
               <text
-                x={frontW - 10}
-                y={50.9}
-                textAnchor="end"
-                fill="#FAF4E4"
-                fontFamily="JetBrains Mono, monospace"
-                fontWeight="800"
-                fontSize="2.8"
+                x={28.75}
+                y={52.8}
+                textAnchor="middle"
+                fill="#F4F4F5"
+                fontFamily="'Oswald', 'Barlow Condensed', Impact, sans-serif"
+                fontWeight="900"
+                fontSize="6.6"
+                letterSpacing="0.1"
               >
-                {formatDuration(totalSec)}
+                {truncate(project.albumArtist.toUpperCase(), 20)}
               </text>
+              <text
+                x={28.75}
+                y={56.4}
+                textAnchor="middle"
+                fill="#E4E4E7"
+                fontFamily="'Barlow Condensed', Inter, sans-serif"
+                fontWeight="800"
+                fontSize="2.1"
+                letterSpacing="0.1"
+              >
+                ORIGINAL MOTION PICTURE SOUNDTRACK
+              </text>
+              <VectorBarcodeSvg
+                code={project.barcodeNumber || '050087316792'}
+                x={64}
+                y={44.2}
+                width={48}
+                height={13}
+                color="#18181B"
+                bgColor="#FFFFFF"
+              />
+              <line x1={4} y1={59.2} x2={frontW - 4} y2={59.2} stroke="#D43B30" strokeWidth="0.55" />
 
-              {/* Handwritten Tracklist Index */}
-              {Array.from({ length: 10 }).map((_, idx) => {
-                const rowY = 60.5 + idx * 5.2;
-                const trk = project.tracks[idx];
+              {/* Bottom Beige 2-Column A | B Index Card */}
+              <rect x={0} y={64} width={frontW} height={56} fill="#E2D8C5" />
+              {[0, 1].map((colIdx) => {
+                const colX = colIdx === 0 ? 5 : 62;
+                const colWidth = 53;
+                const sideLetter = colIdx === 0 ? 'A' : 'B';
+                const colTracks =
+                  colIdx === 0
+                    ? project.tracks.slice(0, Math.ceil(project.tracks.length / 2))
+                    : project.tracks.slice(Math.ceil(project.tracks.length / 2));
+                const fullSlash = colTracks
+                  .map((t) => `${t.title.toUpperCase()} - ${t.artist.toUpperCase()}`)
+                  .join(' / ');
+                const words = fullSlash ? fullSlash.split(' ') : [];
+                const wrapped: string[] = [];
+                let cur = '';
+                for (const w of words) {
+                  const cand = cur ? `${cur} ${w}` : w;
+                  if (cand.length <= 28) cur = cand;
+                  else {
+                    if (cur) wrapped.push(cur);
+                    cur = w;
+                  }
+                }
+                if (cur) wrapped.push(cur);
+
                 return (
-                  <g key={`cd-am-trk-${idx}`}>
-                    <line
-                      x1={8}
-                      y1={rowY}
-                      x2={frontW - 8}
-                      y2={rowY}
-                      stroke="#C7BAA1"
-                      strokeWidth="0.22"
-                    />
-                    {trk && (
-                      <>
-                        <text
-                          x={9.5}
-                          y={rowY - 1}
-                          fill="#B91C1C"
-                          fontFamily="JetBrains Mono, monospace"
-                          fontWeight="800"
-                          fontSize="2.4"
-                        >
-                          {String(idx + 1).padStart(2, '0')}.
-                        </text>
-                        <text
-                          x={16}
-                          y={rowY - 0.8}
-                          fill="#18181B"
-                          fontFamily="'Caveat', cursive, sans-serif"
-                          fontWeight="700"
-                          fontSize="4.3"
-                        >
-                          {truncate(`${trk.title} — ${trk.artist}`, 44)}
-                        </text>
-                        <text
-                          x={frontW - 9.5}
-                          y={rowY - 1}
-                          textAnchor="end"
-                          fill="#57534E"
-                          fontFamily="JetBrains Mono, monospace"
-                          fontSize="2.3"
-                        >
-                          {formatDuration(trk.durationSec)}
-                        </text>
-                      </>
-                    )}
+                  <g key={`cd-am-col-${sideLetter}`} transform={`translate(${colX}, 66.5)`}>
+                    <rect x={0} y={0} width={6.5} height={6.5} fill="#6B5E4F" />
+                    <text
+                      x={3.25}
+                      y={5.1}
+                      textAnchor="middle"
+                      fill="#EAE2D3"
+                      fontFamily="Inter, Helvetica, sans-serif"
+                      fontWeight="800"
+                      fontSize="4.8"
+                    >
+                      {sideLetter}
+                    </text>
+                    <text x={8.2} y={2.4} fill="#5A4E40" fontFamily="Inter, sans-serif" fontWeight="700" fontSize="2.0" letterSpacing="0.2">
+                      DATE
+                    </text>
+                    <line x1={8.2} y1={3.1} x2={colWidth} y2={3.1} stroke="#786B5C" strokeWidth="0.3" />
+                    <text x={8.2} y={5.8} fill="#5A4E40" fontFamily="Inter, sans-serif" fontWeight="700" fontSize="2.0" letterSpacing="0.16">
+                      NOISE REDUCTION
+                    </text>
+                    <rect x={34} y={3.9} width={2.2} height={2.2} fill="none" stroke="#5A4E40" strokeWidth="0.3" />
+                    <rect x={0} y={7.5} width={colWidth} height={0.95} fill="#4A3F34" />
+
+                    {Array.from({ length: 9 }).map((_, lIdx) => {
+                      const ly = 12.5 + lIdx * 4.4;
+                      const txt = wrapped[lIdx];
+                      return (
+                        <g key={`cd-am-l-${sideLetter}-${lIdx}`}>
+                          <line x1={0} y1={ly} x2={colWidth} y2={ly} stroke="#7D7061" strokeWidth="0.3" />
+                          {txt && (
+                            <text
+                              x={0.4}
+                              y={ly - 0.9}
+                              fill="#233554"
+                              fontFamily="'Architects Daughter', 'Caveat', cursive"
+                              fontWeight="700"
+                              fontSize="2.75"
+                            >
+                              {txt}
+                            </text>
+                          )}
+                        </g>
+                      );
+                    })}
                   </g>
                 );
               })}

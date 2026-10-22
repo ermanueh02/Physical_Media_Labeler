@@ -165,55 +165,36 @@ export const CdDiscLabelSvgRenderer: React.FC<CdDiscLabelSvgRendererProps> = ({
               </text>
             </g>
           ) : project.templateId === 'awesome-mix-quill' ? (
-            // Peter Quill's "Awesome Mix" 1970s Striped Disc Label
+            // Peter Quill's "Awesome Mix Vol. 1" Graduated Red Striped Disc Label
             <g>
-              <rect x={0} y={0} width={outerD} height={outerD} fill="#FAF4E4" />
-              {[13, 19, 25, 31].map((ly) => (
-                <line
-                  key={`cd-disc-am-${ly}`}
-                  x1={10}
-                  y1={ly}
-                  x2={outerD - 10}
-                  y2={ly}
-                  stroke="#B8AA91"
-                  strokeWidth="0.22"
-                />
-              ))}
+              <rect x={0} y={0} width={outerD} height={outerD} fill="#F2EFE6" />
               <text
                 x={cx}
-                y={23.5}
+                y={30.5}
                 textAnchor="middle"
-                fill="#111111"
-                fontFamily="'Caveat', cursive, sans-serif"
+                fill="#24477F"
+                fontFamily="'Permanent Marker', 'Architects Daughter', 'Caveat', cursive"
                 fontWeight="700"
-                fontSize="8.2"
-                transform={`rotate(-1.2, ${cx}, 23.5)`}
+                fontSize="6.6"
+                letterSpacing="0.4"
               >
                 {truncate(project.albumTitle.toUpperCase(), 22)}
               </text>
-              <text
-                x={cx}
-                y={30}
-                textAnchor="middle"
-                fill="#78350F"
-                fontFamily="'Caveat', cursive, sans-serif"
-                fontWeight="700"
-                fontSize="4.2"
-              >
-                {truncate(project.albumArtist, 28)}
-              </text>
-              {/* 1970s Stripes Across Center of Disc */}
-              <rect x={0} y={35} width={outerD} height={4.5} fill="#F59E0B" />
-              <rect x={0} y={39.5} width={outerD} height={4.5} fill="#EA580C" />
-              <rect x={0} y={44} width={outerD} height={5} fill="#B91C1C" />
-              <rect x={0} y={49} width={outerD} height={16} fill="#18181B" />
+              {/* Graduated Red Stripes from Center Window Downward */}
+              <rect x={0} y={36} width={outerD} height={0.9} fill="#D43B30" />
+              <rect x={0} y={42.5} width={outerD} height={1.6} fill="#D43B30" />
+              <rect x={0} y={49.5} width={outerD} height={2.5} fill="#D43B30" />
+              <rect x={0} y={57.5} width={outerD} height={3.6} fill="#D43B30" />
+              <rect x={0} y={66.5} width={outerD} height={5.0} fill="#D43B30" />
+              <rect x={0} y={76.5} width={outerD} height={7.0} fill="#D43B30" />
+              <rect x={0} y={88.5} width={outerD} height={28.0} fill="#D43B30" />
               <circle
                 cx={cx}
                 cy={cy}
-                r={outerR - 2.2}
+                r={outerR - 2.0}
                 fill="none"
                 stroke="#18181B"
-                strokeWidth="0.7"
+                strokeWidth="0.5"
               />
             </g>
           ) : (

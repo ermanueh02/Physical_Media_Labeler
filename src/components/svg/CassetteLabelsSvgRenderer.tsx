@@ -54,7 +54,29 @@ export const SingleCassetteLabelSvg: React.FC<SingleCassetteLabelProps> = ({
   const truncate = (str: string, max: number) =>
     str.length > max ? str.slice(0, max - 1) + '…' : str;
 
-  const labelOutlinePath = `
+  const isDG = project.templateId === 'deutsche-grammophon';
+  const isTDK = project.templateId === 'tdk-d-index';
+  const isAwesomeMix = project.templateId === 'awesome-mix-quill';
+  const isHandwritten = project.typography === 'handwritten-pen';
+
+  const actualWinW = isAwesomeMix ? 52 : winW;
+  const actualWinH = isAwesomeMix ? 16.0 : winH;
+  const actualWinX = (W - actualWinW) / 2;
+  const actualWinY = isAwesomeMix ? 13.2 : winY;
+
+  const labelOutlinePath = isAwesomeMix
+    ? `
+    M 6.5 0
+    L ${W - 6.5} 0
+    L ${W} 6.5
+    L ${W} ${H - 2.8}
+    L ${W - 2.8} ${H}
+    L 2.8 ${H}
+    L 0 ${H - 2.8}
+    L 0 6.5
+    Z
+  `
+    : `
     M 3.5 0
     L ${W - 3.5} 0
     L ${W} 3.5
@@ -67,10 +89,6 @@ export const SingleCassetteLabelSvg: React.FC<SingleCassetteLabelProps> = ({
   `;
 
   const clipId = `label-clip-${side}-${Math.round(x)}-${Math.round(y)}`;
-  const isDG = project.templateId === 'deutsche-grammophon';
-  const isTDK = project.templateId === 'tdk-d-index';
-  const isAwesomeMix = project.templateId === 'awesome-mix-quill';
-  const isHandwritten = project.typography === 'handwritten-pen';
 
   return (
     <g transform={`translate(${x}, ${y})`}>
@@ -81,52 +99,31 @@ export const SingleCassetteLabelSvg: React.FC<SingleCassetteLabelProps> = ({
       </defs>
 
       <g clipPath={`url(#${clipId})`}>
-        <rect x={0} y={0} width={W} height={H} fill={paper.bgHex} />
+        <rect x={0} y={0} width={W} height={H} fill={isAwesomeMix ? '#F2EFE6' : paper.bgHex} />
 
         {isAwesomeMix ? (
           <>
-            {/* Franjas horizontales años 70 (Ámbar, Naranja Quemado, Rojo Carmesí y Negro) en la banda central */}
-            <rect x={0} y={12.0} width={W} height={4.4} fill="#FAA307" />
-            <rect x={0} y={16.4} width={W} height={5.2} fill={project.accentColor} />
-            <rect x={0} y={21.6} width={W} height={5.6} fill={project.secondaryColor} />
-            <rect x={0} y={27.2} width={W} height={4.2} fill="#18181B" />
+            {/* 7 Franjas horizontales rojas progresivas ( de fina a gruesa ) exactas al cassette Awesome Mix Vol. 1 */}
+            <rect x={0} y={13.2} width={W} height={0.42} fill="#D43B30" />
+            <rect x={0} y={16.2} width={W} height={0.72} fill="#D43B30" />
+            <rect x={0} y={19.3} width={W} height={1.15} fill="#D43B30" />
+            <rect x={0} y={22.5} width={W} height={1.70} fill="#D43B30" />
+            <rect x={0} y={26.0} width={W} height={2.40} fill="#D43B30" />
+            <rect x={0} y={29.8} width={W} height={3.30} fill="#D43B30" />
+            <rect x={0} y={34.4} width={W} height={7.60} fill="#D43B30" />
 
-            {/* Cartela pautada superior estilo Awesome Mix Vol. 1 & 2 */}
-            <rect
-              x={4.5}
-              y={1.6}
-              width={W - 9}
-              height={9.4}
-              rx={1}
-              fill="#FAF5E8"
-              stroke="#18181B"
-              strokeWidth="0.35"
-            />
-            <line x1={7} y1={6.4} x2={W - 7} y2={6.4} stroke="#A8A29E" strokeWidth="0.2" />
-            <line x1={7} y1={9.8} x2={W - 7} y2={9.8} stroke="#A8A29E" strokeWidth="0.2" />
-
+            {/* Título rotulado a mano en rotulador azul justo encima de la ventana central */}
             <text
               x={W / 2}
-              y={isHandwritten ? 6.2 : 5.8}
+              y={11.5}
               textAnchor="middle"
-              fill="#18181B"
-              fontFamily={fontFamily}
-              fontWeight="800"
-              fontSize={isHandwritten ? '5.2' : '3.4'}
-              letterSpacing="0.14"
-            >
-              {truncate(project.albumTitle, 32)}
-            </text>
-            <text
-              x={W / 2}
-              y={9.4}
-              textAnchor="middle"
-              fill="#44403C"
-              fontFamily={fontFamily}
+              fill="#24477F"
+              fontFamily="'Permanent Marker', 'Architects Daughter', 'Caveat', cursive"
               fontWeight="700"
-              fontSize={isHandwritten ? '2.8' : '1.9'}
+              fontSize="4.8"
+              letterSpacing="0.45"
             >
-              {truncate(project.albumArtist, 38)}
+              {truncate(project.albumTitle.toUpperCase(), 28)}
             </text>
           </>
         ) : isTDK ? (
@@ -227,53 +224,7 @@ export const SingleCassetteLabelSvg: React.FC<SingleCassetteLabelProps> = ({
         )}
 
         {/* Large Minimalist Side Indicator ("A" / "B") on Left Wing */}
-        {isAwesomeMix ? (
-          <g>
-            <rect
-              x={2.8}
-              y={14.8}
-              width={9.4}
-              height={13.5}
-              rx={1}
-              fill="#FAF5E8"
-              stroke="#18181B"
-              strokeWidth="0.4"
-            />
-            <text
-              x={7.5}
-              y={17.5}
-              textAnchor="middle"
-              fill="#18181B"
-              fontFamily="Inter, Helvetica, Arial, sans-serif"
-              fontWeight="800"
-              fontSize="1.55"
-            >
-              SIDE
-            </text>
-            <text
-              x={7.5}
-              y={24.2}
-              textAnchor="middle"
-              fill={project.secondaryColor}
-              fontFamily="Inter, Helvetica, Arial, sans-serif"
-              fontWeight="900"
-              fontSize="6.8"
-            >
-              {side === 'A' ? '1' : '2'}
-            </text>
-            <text
-              x={7.5}
-              y={27.2}
-              textAnchor="middle"
-              fill="#44403C"
-              fontFamily="JetBrains Mono, monospace"
-              fontWeight="700"
-              fontSize="1.45"
-            >
-              {formatDuration(sideTotalSec)}
-            </text>
-          </g>
-        ) : isTDK ? (
+        {isAwesomeMix ? null : isTDK ? (
           <g>
             <rect x={3.3} y={15.2} width={8.4} height={8.4} fill={project.accentColor} />
             <text
@@ -327,53 +278,7 @@ export const SingleCassetteLabelSvg: React.FC<SingleCassetteLabelProps> = ({
         )}
 
         {/* Right Wing: Technical Spec (Dolby B-NR / 120µs) */}
-        {isAwesomeMix ? (
-          <g transform="translate(76.8, 14.8)">
-            <rect
-              x={0}
-              y={0}
-              width={9.4}
-              height={13.5}
-              rx={1}
-              fill="#FAF5E8"
-              stroke="#18181B"
-              strokeWidth="0.4"
-            />
-            <text
-              x={4.7}
-              y={6.8}
-              textAnchor="middle"
-              fill="#18181B"
-              fontFamily="Inter, Helvetica, Arial, sans-serif"
-              fontWeight="900"
-              fontSize="5.4"
-            >
-              {project.tapeCapacity.replace('C-', '')}
-            </text>
-            <text
-              x={4.7}
-              y={9.8}
-              textAnchor="middle"
-              fill={project.accentColor}
-              fontFamily="Inter, Helvetica, Arial, sans-serif"
-              fontWeight="800"
-              fontSize="1.45"
-            >
-              LOW
-            </text>
-            <text
-              x={4.7}
-              y={11.8}
-              textAnchor="middle"
-              fill={project.accentColor}
-              fontFamily="Inter, Helvetica, Arial, sans-serif"
-              fontWeight="800"
-              fontSize="1.45"
-            >
-              NOISE
-            </text>
-          </g>
-        ) : (
+        {isAwesomeMix ? null : (
           <g transform="translate(75.5, 16.5)">
             {project.dolbySystem !== 'NONE' && (
               <DolbyVectorLogo
@@ -411,62 +316,66 @@ export const SingleCassetteLabelSvg: React.FC<SingleCassetteLabelProps> = ({
         )}
 
         {/* Bottom Apron Below Window: Clean Track Summary */}
-        <line
-          x1={4}
-          y1={32.2}
-          x2={W - 4}
-          y2={32.2}
-          stroke={paper.borderHex}
-          strokeWidth="0.2"
-          opacity="0.35"
-        />
+        {!isAwesomeMix && (
+          <>
+            <line
+              x1={4}
+              y1={32.2}
+              x2={W - 4}
+              y2={32.2}
+              stroke={paper.borderHex}
+              strokeWidth="0.2"
+              opacity="0.35"
+            />
 
-        <text
-          x={W / 2}
-          y={35.6}
-          textAnchor="middle"
-          fill={paper.textHex}
-          fontFamily={fontFamily}
-          fontWeight="600"
-          fontSize="1.75"
-        >
-          {truncate(
-            sideTracks
-              .slice(0, 3)
-              .map((t, i) => `${i + 1}. ${t.title}`)
-              .join('   •   '),
-            62
-          )}
-        </text>
-        {sideTracks.length > 3 && (
-          <text
-            x={W / 2}
-            y={38.4}
-            textAnchor="middle"
-            fill={paper.subTextHex}
-            fontFamily={fontFamily}
-            fontSize="1.65"
-          >
-            {truncate(
-              sideTracks
-                .slice(3, 6)
-                .map((t, i) => `${i + 4}. ${t.title}`)
-                .join('   •   '),
-              64
+            <text
+              x={W / 2}
+              y={35.6}
+              textAnchor="middle"
+              fill={paper.textHex}
+              fontFamily={fontFamily}
+              fontWeight="600"
+              fontSize="1.75"
+            >
+              {truncate(
+                sideTracks
+                  .slice(0, 3)
+                  .map((t, i) => `${i + 1}. ${t.title}`)
+                  .join('   •   '),
+                62
+              )}
+            </text>
+            {sideTracks.length > 3 && (
+              <text
+                x={W / 2}
+                y={38.4}
+                textAnchor="middle"
+                fill={paper.subTextHex}
+                fontFamily={fontFamily}
+                fontSize="1.65"
+              >
+                {truncate(
+                  sideTracks
+                    .slice(3, 6)
+                    .map((t, i) => `${i + 4}. ${t.title}`)
+                    .join('   •   '),
+                  64
+                )}
+              </text>
             )}
-          </text>
+          </>
         )}
 
-        {/* Central Die-Cut Window Area (59 mm x 17.5 mm) */}
+        {/* Central Die-Cut Window Area */}
         {showCassetteMechanics ? (
           <g>
             <rect
-              x={winX}
-              y={winY}
-              width={winW}
-              height={winH}
-              rx={2.2}
-              fill="#18181B"
+              x={actualWinX}
+              y={actualWinY}
+              width={actualWinW}
+              height={actualWinH}
+              rx={isAwesomeMix ? 0 : 2.2}
+              fill={isAwesomeMix ? '#3A3D42' : '#18181B'}
               stroke="#3F3F46"
               strokeWidth="0.35"
             />
@@ -484,34 +393,61 @@ export const SingleCassetteLabelSvg: React.FC<SingleCassetteLabelProps> = ({
               fill="#291D18"
               opacity="0.85"
             />
-            <rect
-              x={W / 2 - 10.5}
-              y={winY + 2.8}
-              width={21}
-              height={winH - 5.6}
-              fill="#09090B"
-              stroke="#52525B"
-              strokeWidth="0.2"
-            />
+            {isAwesomeMix ? (
+              /* Five oval scale dots in the center window like Image 2 */
+              <g fill="#E4E4E7" opacity="0.85">
+                {[-7, -3.5, 0, 3.5, 7].map((dx, idx) => (
+                  <ellipse
+                    key={idx}
+                    cx={W / 2 + dx}
+                    cy={reelY}
+                    rx={0.55}
+                    ry={0.35}
+                    transform={`rotate(-30 ${W / 2 + dx} ${reelY})`}
+                  />
+                ))}
+              </g>
+            ) : (
+              <rect
+                x={W / 2 - 10.5}
+                y={winY + 2.8}
+                width={21}
+                height={winH - 5.6}
+                fill="#09090B"
+                stroke="#52525B"
+                strokeWidth="0.2"
+              />
+            )}
             {[leftReelX, rightReelX].map((cx, i) => (
               <g key={i}>
+                {isAwesomeMix && (
+                  <circle
+                    cx={cx}
+                    cy={reelY}
+                    r={reelRadius + 1.8}
+                    fill="none"
+                    stroke="#D4D4D8"
+                    strokeWidth="1.2"
+                    opacity="0.65"
+                  />
+                )}
                 <circle
                   cx={cx}
                   cy={reelY}
                   r={reelRadius}
                   fill="#09090B"
                   stroke="#E4E4E7"
-                  strokeWidth="0.5"
+                  strokeWidth="0.8"
                 />
                 {[0, 60, 120, 180, 240, 300].map((deg) => (
                   <line
                     key={deg}
                     x1={cx}
-                    y1={reelY - reelRadius + 0.2}
+                    y1={reelY - reelRadius + 0.1}
                     x2={cx}
-                    y2={reelY - reelRadius + 1.6}
+                    y2={reelY - reelRadius + 1.7}
                     stroke="#E4E4E7"
-                    strokeWidth="0.8"
+                    strokeWidth="1.0"
                     transform={`rotate(${deg} ${cx} ${reelY})`}
                   />
                 ))}
@@ -521,11 +457,11 @@ export const SingleCassetteLabelSvg: React.FC<SingleCassetteLabelProps> = ({
         ) : (
           <g>
             <rect
-              x={winX}
-              y={winY}
-              width={winW}
-              height={winH}
-              rx={2.2}
+              x={actualWinX}
+              y={actualWinY}
+              width={actualWinW}
+              height={actualWinH}
+              rx={isAwesomeMix ? 0 : 2.2}
               fill="#FFFFFF"
               stroke={showDieCutGuides ? '#A1A1AA' : paper.borderHex}
               strokeWidth="0.25"

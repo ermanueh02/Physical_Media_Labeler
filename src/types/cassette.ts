@@ -223,18 +223,18 @@ export interface TemplateMetadata {
 export const HISTORICAL_TEMPLATES: TemplateMetadata[] = [
   {
     id: 'awesome-mix-quill',
-    name: 'Awesome Mix Vol. 1 & 2',
+    name: 'Awesome Mix Vol. 1 (Star-Lord)',
     era: '1974–1978',
-    region: 'Peter Quill / Star-Lord',
+    region: 'Guardians of the Galaxy / TDK',
     description:
-      'Inspirada en los cassettes de Peter Quill (Guardians of the Galaxy): franjas retro años 70 en naranja quemado, rojo carmesí y ámbar dorado, papel crema envejecido y rotulador manuscrito.',
-    defaultAccent: '#E85D04',
-    defaultSecondary: '#D00000',
+      'Réplica exacta del cassette de Peter Quill: etiqueta crema achaflanada con "AWESOME MIX VOL. 1" en rotulador azul y 7 franjas rojas progresivas, lomo TDK e índice manuscrito a doble columna [A]/[B].',
+    defaultAccent: '#D43B30',
+    defaultSecondary: '#24477F',
     defaultPaper: 'aged-ivory',
     defaultTypography: 'handwritten-pen',
-    defaultLabel: 'SUPERTAPE / LN-60',
-    defaultCatalog: 'VOL. 1 & 2',
-    defaultStereoText: 'LOW NOISE • HIGH OUTPUT 60',
+    defaultLabel: 'MARVEL / HOLLYWOOD RECORDS',
+    defaultCatalog: 'D002112804',
+    defaultStereoText: 'ORIGINAL MOTION PICTURE SOUNDTRACK',
   },
   {
     id: 'full-bleed-art',
